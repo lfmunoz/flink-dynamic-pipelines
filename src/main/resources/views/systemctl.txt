@@ -1,0 +1,215 @@
+
+<!-- ________________________________________________________________________________ -->
+<!-- TEMPLATE-->
+<!-- ________________________________________________________________________________ -->
+<template>
+  <div class="systemctl">
+    <div>
+      <button @click="refresh">refresh</button>
+    </div>
+
+    <div class="selection">
+      <div v-if="rowSelection !== null">
+        <x-label label="Unit" :value="rowSelection.unit"></x-label>
+        <x-label label="Load" :value="rowSelection.load"></x-label>
+        <x-label label="Active" :value="rowSelection.active"></x-label>
+        <x-label label="Sub" :value="rowSelection.sub"></x-label>
+        <x-label label="Description" :value="rowSelection.description"></x-label>
+
+        <button>STATUS</button>
+        <button>START</button>
+        <button>STOP</button>
+        <button>RESTART</button>
+        <button>DISABLE</button>
+        <button>ENABLE</button>
+
+      </div>
+      <div v-else>No Unit has been selected</div>
+    </div>
+    <div class="unit-select" v-for="unitName in units" :key="unitName">
+      <button :class="{active: unitName == selectedUnit }" @click="selectUnit(unitName)">{{unitName}}</button>
+    </div>
+    <vue-good-table
+      :columns="tableData.columns"
+      :rows="tableData.rows"
+      @on-row-click="onCellClick"
+      :pagination-options="{
+    enabled: true
+  }"
+      styleClass="vgt-table condensed"
+      theme="nocturnal"
+    >
+      <template slot="table-row" slot-scope="props">
+        <span
+          v-if="props.row == rowSelection"
+          class="row-selected"
+        >{{props.formattedRow[props.column.field]}}</span>
+        <span v-else>{{props.formattedRow[props.column.field]}}</span>
+      </template>
+    </vue-good-table>
+  </div>
+</template>
+
+<!-- ________________________________________________________________________________ -->
+<!-- SCRIPT -->
+<!-- ________________________________________________________________________________ -->
+<script>
+import {
+  TaskType,
+  buildRunScript,
+  buildRunById,
+  buildRunCommand
+} from "@/task/TaskUtils.js";
+
+//--------------------------------------------------------------------------------------
+// DEFAULT
+//--------------------------------------------------------------------------------------
+export default {
+  name: "zSystemCtl",
+  props: ["nodeId"],
+  data() {
+    return {
+      tableData: {
+          columns: [],
+          rows: []
+      },
+       rowSelection: null,
+      selectedUnit: ""
+    };
+  },
+  //--------------------------------------------------------------------------------------
+  // METHODS
+  //--------------------------------------------------------------------------------------
+  methods: {
+    selectUnit(unitName) {
+      this.selectedUnit = unitName;
+      //   console.log(unitName)
+      this.objToTableData(this.systemctl, unitName);
+    },
+ onCellClick(params) {
+      console.log(params);
+      if (params.row == this.rowSelection) {
+        this.rowSelection = null;
+      } else {
+        this.rowSelection = params.row;
+      }
+    },
+    async refresh() {
+      const systemctl = await this.runById(21, {});
+      //   console.log(systemctl);
+      this.objToTableData(systemctl, null);
+      //  this.$set(this, 'model', node_refresh)
+      await this.$store.dispatch("node/setNode", {
+        nodeId: this.nodeId,
+        object: { systemctl: systemctl }
+      });
+    },
+
+    objToTableData(obj, unitName) {
+      const data = {
+        rows: [],
+        columns: []
+      };
+      let firstUnit = unitName;
+      if (firstUnit === null) {
+        firstUnit = Object.keys(obj)[0];
+      }
+      this.selectedUnit = obj[firstUnit][0].type;
+      //   const firstJsonObject = firstUnit[0];
+
+      //inspect first item to determine columns
+      const keys = Object.keys(obj[firstUnit][0]);
+      keys.pop();
+      data.columns = keys.map(item => {
+        return {
+          label: item,
+          field: item
+        };
+      });
+      data.columns = ["unit", "active", "description"].map(item => {
+        return {
+          label: item,
+          field: item,
+        //   filterOptions: {
+            // enabled: true, // enable filter for this column
+            //  trigger: 'enter', //only trigger on enter not on keyup
+        //   }
+        };
+      });
+
+      data.rows = obj[firstUnit].map((obj, i) => {
+        const row = { id: i };
+        // console.log(obj)
+        keys.forEach(key => {
+          row[key] = obj[key];
+        });
+        return row;
+      });
+      this.tableData = data;
+    },
+
+    async runById(id, params) {
+      const aTaskDTO = buildRunById(id, this.nodeId, params);
+      const result = await this.$store.dispatch(
+        "task/executeTaskDTO",
+        aTaskDTO
+      );
+      return result;
+    }
+  },
+  //--------------------------------------------------------------------------------------
+  // COMPUTED
+  //--------------------------------------------------------------------------------------
+  computed: {
+    systemctl() {
+      return this.$store.getters["node/modelKey"](this.nodeId, "systemctl");
+      //   return this.model.systemctl;
+    },
+    units() {
+      return Object.keys(this.systemctl);
+    },
+
+    refreshNode() {
+      return this.$store.state.node.refresh[this.nodeId];
+    }
+  },
+  //--------------------------------------------------------------------------------------
+  // WATCH
+  //--------------------------------------------------------------------------------------
+  watch: {
+    refreshNode(newVal, oldVal) {
+      const diff = newVal - oldVal;
+      if (diff > 1000 || oldVal == undefined) {
+        this.refresh();
+      }
+    }
+  },
+  mounted() {}
+};
+</script>
+
+<!-- ________________________________________________________________________________ -->
+<!-- STYLE -->
+<!-- ________________________________________________________________________________ -->
+<style scoped>
+.systemctl {
+  border: 1px solid red;
+  margin: 5px;
+  padding: 5px;
+  text-align: left;
+}
+.unit-select {
+  display: inline-block;
+}
+.unit-select > button {
+  background-color: black;
+  color: white;
+  padding: 5px;
+}
+
+.unit-select > button.active {
+  background-color: red;
+  color: white;
+  padding: 5px;
+}
+</style>
