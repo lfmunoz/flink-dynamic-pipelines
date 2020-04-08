@@ -1,6 +1,9 @@
 ### Vert.x ###
 .vertx/
 
+build/
+blackhole/
+.idea/
 ### Eclipse ###
 
 .metadata
