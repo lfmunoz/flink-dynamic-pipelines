@@ -4,6 +4,7 @@
 build/
 blackhole/
 .idea/
+.gradle/
 ### Eclipse ###
 
 .metadata

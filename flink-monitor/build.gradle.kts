@@ -17,7 +17,9 @@ val juniperVersion: String by rootProject.extra
 plugins {
   java
 }
-
+apply {
+  plugin("kotlin")
+}
 //________________________________________________________________________________
 // PROJECT SETTINGS
 //________________________________________________________________________________
@@ -72,9 +74,9 @@ dependencies {
 
 
 tasks {
-//  withType<KotlinCompile> {
-//    kotlinOptions.jvmTarget = "1.8"
-//  }
+  withType<KotlinCompile> {
+    kotlinOptions.jvmTarget = "1.8"
+  }
   withType(Test::class.java) {
     testLogging.showStandardStreams = true
     useJUnitPlatform()

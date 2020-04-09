@@ -19,7 +19,7 @@ val myModule = module(createdAtStart = true) {
   single { VertxOptions() }
   single { Vertx.vertx(get()) }
   // ACTIONS
-  single(named("TestAction")) { TestAction() as ActionInterface}
+  single(named("TestAction")) { TestAction() as ActionInterface }
   single(named("ActionsMap")) {
     hashMapOf<Int, ActionInterface>(
       WsPacketType.TEST.id to get(named("TestAction"))
@@ -51,7 +51,7 @@ private fun startWs(vertx: Vertx, aAppConfig: AppConfig) {
   }
 }
 
-private fun startHttp(vertx: Vertx,  aAppConfig: AppConfig) {
+private fun startHttp(vertx: Vertx, aAppConfig: AppConfig) {
   val aHttpVerticle = HttpVerticle(aAppConfig)
   vertx.deployVerticle(aHttpVerticle) {
     if (it.succeeded()) {

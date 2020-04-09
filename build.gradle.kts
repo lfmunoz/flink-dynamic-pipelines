@@ -33,6 +33,8 @@ val vertxVersion by extra {"3.9.0"}
 // GLOBAL
 //________________________________________________________________________________
 allprojects {
+
+
   tasks.register("hello") {
     doLast {
       println("I'm ${this.project.name}")

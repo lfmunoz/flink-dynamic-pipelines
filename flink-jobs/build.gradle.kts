@@ -19,7 +19,9 @@ val flinkScalaRuntime: String by rootProject.extra
 plugins {
   java
 }
-
+apply {
+  plugin("kotlin")
+}
 //________________________________________________________________________________
 // PROJECT SETTINGS
 //________________________________________________________________________________
