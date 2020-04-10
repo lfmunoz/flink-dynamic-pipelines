@@ -1,4 +1,4 @@
-<configuration>
+<configuration debug="true">
 
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
@@ -12,5 +12,6 @@
 
   <logger name="net.schmizz.sshj" level="error"/>
   <logger name="com.lfmunoz" level="debug"/>
+  <logger name="com.lfmunoz.flink.kafka.*" level="debug"/>
 
 </configuration>

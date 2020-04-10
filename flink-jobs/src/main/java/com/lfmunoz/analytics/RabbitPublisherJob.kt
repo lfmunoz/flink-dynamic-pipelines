@@ -1,7 +1,7 @@
 package eco.analytics.bridge
 
+import com.lfmunoz.analytics.flink.FlinkJobContext
 import eco.analytics.bridge.flink.*
-import eco.analytics.bridge.rabbit.rabbitSink
 import eco.analytics.flink.data.eco.MonitorMessage
 
 // Flink Job: Generate Monitor Messages to Rabbit

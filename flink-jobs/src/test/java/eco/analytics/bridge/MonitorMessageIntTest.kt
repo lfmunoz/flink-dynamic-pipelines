@@ -4,18 +4,16 @@ import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.Input
 import com.esotericsoftware.kryo.io.Output
 import eco.analytics.bridge.flink.*
-import eco.analytics.bridge.flink.FlinkUtils.Companion.listMonitorMessageType
-import eco.analytics.bridge.flink.FlinkUtils.Companion.mapper
-import eco.analytics.bridge.monitor.MonitorMessageDataGenerator
+import com.lfmunoz.analytics.flink.FlinkUtils.Companion.listMonitorMessageType
+import com.lfmunoz.analytics.flink.FlinkUtils.Companion.mapper
+import com.lfmunoz.analytics.flink.ListMonitorMessageType
+import com.lfmunoz.analytics.flink.parseParameters
+import com.lfmunoz.analytics.monitor.MonitorMessageDataGenerator
 import eco.analytics.bridge.rabbit.RabbitConfig
-import eco.analytics.bridge.rabbit.rabbitSink
 import eco.analytics.bridge.rabbit.rabbitSource
-import eco.analytics.flink.data.eco.MonitorMessage
-import eco.analytics.flink.kafka.*
 import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.test.util.MiniClusterWithClientResource
-import org.apache.kafka.common.metrics.stats.Count
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
 import org.junit.ClassRule
@@ -24,8 +22,6 @@ import org.junit.jupiter.api.TestInstance
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.util.*
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import kotlin.collections.HashMap
 import kotlin.collections.List
 import kotlin.collections.MutableList
@@ -36,6 +32,9 @@ import kotlin.collections.map
  * Integration Test - Monitor Message Integration Test
  *  Dependencies: RabbitMQ / Kafka
  */
+
+
+/*
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class MonitorMessageIntTest {
 
@@ -157,3 +156,4 @@ class MonitorMessageIntTest {
     }
 
 } // EOF
+*/

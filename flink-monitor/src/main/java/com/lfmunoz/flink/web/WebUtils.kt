@@ -92,8 +92,7 @@ enum class WsPacketType(val id: Int) {
   TEST (2),
   INVALID(3),
 
-  TASK (4),
-  CRUD (5)
+  KAFKA(4)
 }
 
 enum class WsPacketCode(val id: Int) {

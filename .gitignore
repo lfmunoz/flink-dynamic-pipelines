@@ -5,6 +5,7 @@ build/
 blackhole/
 .idea/
 .gradle/
+**.hprof
 ### Eclipse ###
 
 .metadata

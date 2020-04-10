@@ -7,6 +7,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.google.common.io.Resources
+import com.lfmunoz.flink.monitor.MonitorMessage
 import io.vertx.core.eventbus.EventBus
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonObject
@@ -23,6 +24,11 @@ val mapper = jacksonObjectMapper()
   .registerModule(JavaTimeModule()) // new module, NOT JSR310Module
   .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
   .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+
+val ListOfIntType = mapper.typeFactory.constructCollectionType(List::class.java, Int::class.java)
+val ListOfMonitorMessageType = mapper.typeFactory.constructCollectionType(List::class.java, MonitorMessage::class.java)
+val ListOfByteArrayType = mapper.typeFactory.constructCollectionType(List::class.java, ByteArray::class.java)
+
 
 fun <T: Any> String.toKotlinObject(c: KClass<T>): T {
   return mapper.readValue(this, c.java)

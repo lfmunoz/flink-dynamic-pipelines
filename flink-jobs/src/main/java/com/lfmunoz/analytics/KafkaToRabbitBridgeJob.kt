@@ -1,9 +1,9 @@
 package eco.analytics.bridge
 
+import com.lfmunoz.analytics.flink.FlinkJobContext
 import eco.analytics.bridge.flink.*
 import eco.analytics.flink.kafka.KafkaMessage
 import eco.analytics.flink.kafka.kafkaSource
-import eco.analytics.bridge.rabbit.rabbitSink
 
 // Flink Job:  Kafka --> Rabbit Bridge
 fun kafkaToRabbitBridgeJob(jobCtx: FlinkJobContext) {

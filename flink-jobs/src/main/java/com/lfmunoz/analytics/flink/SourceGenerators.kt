@@ -1,17 +1,11 @@
 package eco.analytics.bridge.flink
 
-import eco.analytics.bridge.flink.FlinkUtils.Companion.mapper
-import eco.analytics.bridge.monitor.MonitorMessageDataGenerator
+import com.lfmunoz.analytics.monitor.MonitorMessageDataGenerator
 import eco.analytics.flink.data.eco.MonitorMessage
-import org.apache.flink.api.common.functions.RichFlatMapFunction
 import org.apache.flink.api.common.functions.RichMapFunction
-import org.apache.flink.configuration.Configuration
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction
-import org.apache.flink.util.Collector
 import org.slf4j.LoggerFactory
-import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 

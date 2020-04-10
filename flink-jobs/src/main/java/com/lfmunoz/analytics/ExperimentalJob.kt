@@ -1,10 +1,9 @@
 package eco.analytics.bridge
 
+import com.lfmunoz.analytics.flink.parseParameters
 import eco.analytics.bridge.flink.*
-import eco.analytics.bridge.rabbit.rabbitSink
 import org.apache.flink.api.common.state.MapStateDescriptor
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo
-import org.apache.flink.api.common.typeinfo.TypeHint
 import org.apache.flink.streaming.api.functions.co.BroadcastProcessFunction
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction

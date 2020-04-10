@@ -9,13 +9,13 @@ import org.junit.ClassRule
 import java.util.ArrayList
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import eco.analytics.bridge.flink.*
-import eco.analytics.bridge.flink.FlinkUtils.Companion.mapper
-import eco.analytics.flink.kafka.*
-import org.apache.flink.api.java.utils.ParameterTool
+import com.lfmunoz.analytics.flink.FlinkUtils.Companion.mapper
+import com.lfmunoz.analytics.flink.parseParameters
+import com.lfmunoz.analytics.kafka.KafkaConfig
+import com.lfmunoz.analytics.kafka.KafkaMessage
+import com.lfmunoz.analytics.kafka.kafkaSink
+import com.lfmunoz.analytics.kafka.kafkaSource
 import org.awaitility.kotlin.await
-
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 
 
 /**
@@ -53,9 +53,7 @@ class KafkaIntTest {
         val aFlinkJobContext = parseParameters(args)
         val aKafkaConfig = KafkaConfig(
                 bootstrapServer,
-                "lz4",
-                "kafka-group-id",
-                KafkaTopics("kafka-test", "kafka-test")
+                "kafka-test"
         )
 
         Thread() {
@@ -66,11 +64,11 @@ class KafkaIntTest {
                         val valueAndKey = mapper.writeValueAsBytes(it)
                         return@map KafkaMessage(valueAndKey, valueAndKey)
                     }.returns(KafkaMessage::class.java)
-                    .kafkaSink(aKafkaConfig, "kafka-test")
+                    .kafkaSink(aKafkaConfig)
 
             // RABBIT READ
             aFlinkJobContext.env.setParallelism(1)
-                    .kafkaSource(aKafkaConfig, "kafka-test")
+                    .kafkaSource(aKafkaConfig)
                     .map {
                         val value = mapper.readValue(it.value, Int::class.java)
                         return@map value.toString().toLong()

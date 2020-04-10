@@ -1,7 +1,7 @@
 package eco.analytics.bridge
 
-import eco.analytics.bridge.flink.AvailableJobs
-import eco.analytics.bridge.flink.parseParameters
+import com.lfmunoz.analytics.flink.AvailableJobs
+import com.lfmunoz.analytics.flink.parseParameters
 import org.slf4j.LoggerFactory
 
 // Flink Job

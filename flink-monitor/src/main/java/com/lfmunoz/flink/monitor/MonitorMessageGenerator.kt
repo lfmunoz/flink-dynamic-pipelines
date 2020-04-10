@@ -1,4 +1,4 @@
-package com.lfmunoz.analytics.monitor
+package com.lfmunoz.flink.monitor
 
 
 import java.io.Serializable

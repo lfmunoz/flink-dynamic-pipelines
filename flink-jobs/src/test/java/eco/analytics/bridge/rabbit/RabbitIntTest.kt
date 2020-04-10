@@ -9,9 +9,10 @@ import org.junit.ClassRule
 import java.util.ArrayList
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import eco.analytics.bridge.flink.*
-import eco.analytics.bridge.flink.FlinkUtils.Companion.listIntType
-import eco.analytics.bridge.flink.FlinkUtils.Companion.mapper
-import org.junit.jupiter.api.Disabled
+import com.lfmunoz.analytics.flink.FlinkUtils.Companion.listIntType
+import com.lfmunoz.analytics.flink.FlinkUtils.Companion.mapper
+import com.lfmunoz.analytics.flink.ListIntType
+import com.lfmunoz.analytics.flink.parseParameters
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 

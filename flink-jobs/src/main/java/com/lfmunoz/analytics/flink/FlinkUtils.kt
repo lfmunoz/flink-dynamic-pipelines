@@ -1,10 +1,9 @@
-package eco.analytics.bridge.flink
+package com.lfmunoz.analytics.flink
 
-import com.fasterxml.jackson.datatype.guava.GuavaModule
-import eco.analytics.flink.kafka.KafkaConfig
-import eco.analytics.flink.kafka.KafkaMessage
+import com.lfmunoz.analytics.kafka.KafkaConfig
+import com.lfmunoz.analytics.kafka.KafkaMessage
+import com.lfmunoz.analytics.monitor.MonitorMessage
 import eco.analytics.bridge.rabbit.RabbitConfig
-import eco.analytics.flink.data.eco.MonitorMessage
 import org.apache.flink.api.common.typeinfo.TypeHint
 import org.apache.flink.api.java.utils.ParameterTool
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
@@ -30,11 +29,11 @@ data class FlinkConfig(
 // FLINK CONTEXT
 //________________________________________________________________________________
 data class FlinkJobContext(
-        val env: StreamExecutionEnvironment,
-        val rabbitConfig: RabbitConfig,
-        val kafkaConfig: KafkaConfig,
-        val flinkConfig: FlinkConfig,
-        val job: String
+  val env: StreamExecutionEnvironment,
+  val rabbitConfig: RabbitConfig,
+  val kafkaConfig: KafkaConfig,
+  val flinkConfig: FlinkConfig,
+  val job: String
 )
 
 enum class AvailableJobs(value: String) {
@@ -74,7 +73,7 @@ val ListMonitorMessageType = object : TypeHint<List<MonitorMessage>>() {}
 
 class FlinkUtils {
     companion object {
-        val mapper = com.fasterxml.jackson.databind.ObjectMapper().registerModule(GuavaModule())
+        val mapper = com.fasterxml.jackson.databind.ObjectMapper()
         val listIntType = mapper.typeFactory.constructCollectionType(List::class.java, Int::class.java)
         val listMonitorMessageType = mapper.typeFactory.constructCollectionType(List::class.java, MonitorMessage::class.java)
         val listByteArrayType = mapper.typeFactory.constructCollectionType(List::class.java, ByteArray::class.java)

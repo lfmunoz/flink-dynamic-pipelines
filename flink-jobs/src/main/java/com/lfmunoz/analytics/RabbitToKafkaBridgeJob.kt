@@ -1,9 +1,9 @@
 package eco.analytics.bridge
 
-import eco.analytics.bridge.flink.FlinkJobContext
-import eco.analytics.bridge.flink.FlinkUtils.Companion.listByteArrayType
-import eco.analytics.bridge.flink.FlinkUtils.Companion.mapper
-import eco.analytics.bridge.flink.ListByteArrayType
+import com.lfmunoz.analytics.flink.FlinkJobContext
+import com.lfmunoz.analytics.flink.FlinkUtils.Companion.listByteArrayType
+import com.lfmunoz.analytics.flink.FlinkUtils.Companion.mapper
+import com.lfmunoz.analytics.flink.ListByteArrayType
 import eco.analytics.flink.kafka.KafkaMessage
 import eco.analytics.flink.kafka.kafkaSink
 import eco.analytics.bridge.rabbit.rabbitSource
