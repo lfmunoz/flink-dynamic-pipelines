@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import org.jetbrains.kotlin.utils.ThreadSafe
 import org.koin.core.get
+import org.koin.core.qualifier.named
 import java.lang.IllegalArgumentException
 import java.time.Instant
 import kotlin.coroutines.CoroutineContext
@@ -44,11 +45,13 @@ class OurWSConnection(
 //  private val aTestAction = get<TestAction>()
 //  private val aTaskAction = get<TaskAction>()
 //
-  private val actionHolder: Map<Int, ActionInterface> = hashMapOf(
-//    WsPacketType.CRUD.id to aCrudAction,
+//  private val actionHolder: Map<Int, ActionInterface> = hashMapOf(
+//    WsPacketType.KAFKA to ,
 //    WsPacketType.TEST.id to aTestAction,
 //    WsPacketType.TASK.id to aTaskAction
-  )
+//  )
+  private val actionHolder: HashMap<Int, ActionInterface> = get(named("ActionsMap"))
+
   private val job = Job()
   override val coroutineContext: CoroutineContext
     get() = vertx.dispatcher() + job

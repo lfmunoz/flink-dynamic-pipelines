@@ -2,14 +2,17 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Home from '../views/Home.vue'
 
-Vue.use(VueRouter)
+import Test from '@/test/Test.vue'
+import Connection from '@/websocket/Connection.vue'
 
-  const routes = [
-  {
-    path: '/',
-    name: 'Home',
-    component: Home
-  },
+// ________________________________________________________________________________
+// ROUTES
+// ________________________________________________________________________________
+const routes = [
+  { path: '/', name: 'connection', component: Connection },
+  { path: '/home', name: 'Home', component: Home },
+  { path: '/test', name: 'Test', component: Test},
+
   {
     path: '/about',
     name: 'About',
@@ -20,10 +23,17 @@ Vue.use(VueRouter)
   }
 ]
 
+// ________________________________________________________________________________
+// ROUTER OBJECT
+// ________________________________________________________________________________
+Vue.use(VueRouter)
 const router = new VueRouter({
   mode: 'history',
   base: process.env.BASE_URL,
   routes
 })
 
+// ________________________________________________________________________________
+// EXPORT
+// ________________________________________________________________________________
 export default router

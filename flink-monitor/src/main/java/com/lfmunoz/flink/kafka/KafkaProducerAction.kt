@@ -101,6 +101,7 @@ class KafkaProducerAction : ActionInterface {
         val key = aMonitorMessage.id.toByteArray()
         val value = mapper.writeValueAsBytes(aMonitorMessage)
         messagesSent.getAndIncrement()
+        delay(100)
         emit(KafkaMessage(key, value))
       }
     })
@@ -110,7 +111,8 @@ class KafkaProducerAction : ActionInterface {
   private fun sampling() : Flow<String> {
     Log.info().log("[KafkaAction sampling] - starting consumer")
     val flow = KafkaConsumerBare.connect(aKafkaConfig, isSampling)
-    return flow.debounce(1000L).map {
+    return flow.debounce(1_00L).map {
+      Log.info().log("[luis] - received message")
       messagesReceived.getAndIncrement()
       return@map mapper.readValue(it.value, MonitorMessage::class.java)
     }.map {
