@@ -1,6 +1,8 @@
 package com.lfmunoz.flink.monitor
 
 import com.lfmunoz.flink.ListOfMonitorMessageType
+import com.lfmunoz.flink.actions.producer.MonitorMessage
+import com.lfmunoz.flink.actions.producer.MonitorMessageDataGenerator
 import com.lfmunoz.flink.mapper
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Test

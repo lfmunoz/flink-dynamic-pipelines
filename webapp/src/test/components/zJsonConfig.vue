@@ -2,45 +2,8 @@
 <!-- TEMPLATE-->
 <!-- ________________________________________________________________________________ -->
 <template>
-  <div class="test">
-    <h1>TestAction</h1>
-    <!-- <z-command /> -->
-
-    <div class="status">
-        <button >STATUS</button>
-      <x-label label="Last Updated" :value="statusUpdated" />
-      <x-label label="Is Producing" :value="statusObj.isProducing" />
-      <x-label label="Is Sampling" :value="statusObj.isSampling" />
-      <x-label label="Messages Received" :value="statusObj.messagesReceived" />
-      <x-label label="Messages Sent" :value="statusObj.messagesSent" />
-      <x-label label="Messages" :value="statusObj.message" />
-    </div>
-
-
-      <x-three-column>
-          <template v-slot:left>
-    <zKafkaGenerator />
-          </template>
-          <template v-slot:middle>
-          <div class="test">
-
-            <h1>MAPPER</h1>
-            <x-key-value />
-          </div>
-          </template>
-            <template v-slot:right>
-          <div class="test">
-            <h1>RESULT</h1>
-
-    <div class="sample-view">
-      <button @click="console.log('x')">SAMPLE</button>
-      <button @click="console.log('y')">CANCEL</button>
-      <x-input label="Sample Interval" value="5" />
-    </div>
-
-            </div>
-            </template>
-      </x-three-column>
+  <div class="json-config">
+    <h1>Generator Config</h1>
 
   </div>
 </template>
@@ -50,27 +13,18 @@
 <!-- ________________________________________________________________________________ -->
 <script>
 
-// import zCommand from "@/test/components/zCommand.vue"
-import zKafkaGenerator from "@/test/components/zKafkaGenerator.vue"
-import xKeyValue from "@/test/components/xKeyValue.vue"
-
 //--------------------------------------------------------------------------------------
 // Default
 //--------------------------------------------------------------------------------------
 export default {
-  name: "test",
-  components: { 
-    // zCommand,
-    zKafkaGenerator,
-    xKeyValue
-  },
+  name: "zJsonConfig",
+  components: { },
   //--------------------------------------------------------------------------------------
   // DATA
   //--------------------------------------------------------------------------------------
   data: function() {
     return {
-        statusUpdated: Date.now(),
-          statusObj: {},
+      stdin: "",
     };
   },
   //--------------------------------------------------------------------------------------
@@ -92,13 +46,11 @@ export default {
 <!-- STYLE -->
 <!-- ________________________________________________________________________________ -->
 <style>
-.test {
-  border: 1px solid black;
+.json-config {
+  border: 1px solid red;
 }
 
-.status {
-  border: 1px solid green;
-  margin: 10px;
-}
+
+
 
 </style>

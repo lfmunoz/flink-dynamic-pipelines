@@ -1,4 +1,4 @@
-package com.lfmunoz.flink.monitor
+package com.lfmunoz.flink.actions.producer
 
 
 import java.io.Serializable
@@ -33,7 +33,7 @@ class MonitorMessageDataGenerator (nrOfUuids: Int) {
 
         return MonitorMessage(
                 id = "id-$uuid",
-                informTime =  time,
+                informTime = time,
                 informIntervalMillis = 15,
                 values = values,
                 version = 0

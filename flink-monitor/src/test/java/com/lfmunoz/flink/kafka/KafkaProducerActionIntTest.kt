@@ -1,6 +1,10 @@
 package com.lfmunoz.flink.kafka
 
 import ch.qos.logback.classic.Level
+import com.lfmunoz.flink.actions.producer.KafkaActionDTO
+import com.lfmunoz.flink.actions.producer.KafkaActionStatus
+import com.lfmunoz.flink.actions.producer.KafkaActionType
+import com.lfmunoz.flink.actions.producer.KafkaProducerAction
 import com.lfmunoz.flink.changeLogLevel
 import com.lfmunoz.flink.web.WsPacket
 import com.lfmunoz.flink.web.WsPacketCode
@@ -13,9 +17,7 @@ import org.junit.jupiter.api.Test
 
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.TestInstance
-import java.lang.RuntimeException
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -119,7 +121,7 @@ class KafkaProducerActionIntTest {
   //  ________________________________________________________________________________
   private fun statusWsPacket(): WsPacket {
     val message = KafkaActionDTO(
-      type = KafkaActionType.STATUS
+            type = KafkaActionType.STATUS
     )
     return buildWsPacket(message.toJson())
   }

@@ -1,13 +1,15 @@
-package com.lfmunoz.flink.kafka
+package com.lfmunoz.flink.actions.consumer
 
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.lfmunoz.flink.kafka.KafkaConfig
+import com.lfmunoz.flink.kafka.KafkaConsumerBare
+import com.lfmunoz.flink.kafka.KafkaMessage
+import com.lfmunoz.flink.kafka.KafkaPublisherBare
 import com.lfmunoz.flink.mapper
-import com.lfmunoz.flink.monitor.MonitorMessage
-import com.lfmunoz.flink.monitor.MonitorMessageDataGenerator
+import com.lfmunoz.flink.actions.producer.MonitorMessage
+import com.lfmunoz.flink.actions.producer.MonitorMessageDataGenerator
 import com.lfmunoz.flink.web.ActionInterface
 import com.lfmunoz.flink.web.WsPacket
-import io.vertx.kotlin.core.json.json
-import io.vertx.kotlin.core.json.obj
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import org.fissore.slf4j.FluentLoggerFactory
@@ -15,18 +17,22 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.random.Random
 
-class KafkaProducerAction : ActionInterface {
+class ConsumerAction : ActionInterface {
 
   companion object {
-    private val Log = FluentLoggerFactory.getLogger(KafkaProducerAction::class.java)
+    private val Log = FluentLoggerFactory.getLogger(ConsumerAction::class.java)
   }
 
   private val aMonitorMessageDataGenerator = MonitorMessageDataGenerator(100)
 
 
   private val aKafkaConfig = KafkaConfig(
-    groupId  = "consumer-default-${Random.nextInt(11234, 99876)}"
+    groupId = "consumer-default-${Random.nextInt(11234, 99876)}"
   )
+
+  // PRODUCER
+  private val messageRatePerSecondInt: Int = 5
+
 
   private val isProducing = AtomicBoolean(false)
   private val isSampling= AtomicBoolean(false)
@@ -94,14 +100,15 @@ class KafkaProducerAction : ActionInterface {
   } // end of accept
 
   private suspend fun start() {
-    Log.info().log("[KafkaAction start] - starting publishing")
+    val publishDelay = rateToDelayInMillis(messageRatePerSecondInt)
+    Log.info().log("[KafkaAction start] - starting publishing rate={}", messageRatePerSecondInt)
     KafkaPublisherBare.connect(aKafkaConfig, flow {
       while (isProducing.get()) {
         val aMonitorMessage = aMonitorMessageDataGenerator.random(20)
         val key = aMonitorMessage.id.toByteArray()
         val value = mapper.writeValueAsBytes(aMonitorMessage)
         messagesSent.getAndIncrement()
-        delay(100)
+        delay(publishDelay)
         emit(KafkaMessage(key, value))
       }
     })
@@ -132,8 +139,8 @@ class KafkaProducerAction : ActionInterface {
       message = message
     ).toJson()
     return KafkaActionDTO(
-      type =  aKafkaActionDTO.type,
-      body =  status
+      type = aKafkaActionDTO.type,
+      body = status
     ).toJson()
   }
 
@@ -146,9 +153,14 @@ class KafkaProducerAction : ActionInterface {
       message = text
     ).toJson()
     return KafkaActionDTO(
-      type =  KafkaActionType.ERROR,
+      type = KafkaActionType.ERROR,
       body = status
     ).toJson()
+  }
+
+  private fun rateToDelayInMillis(rate: Int) : Long {
+    return (1000/rate).toLong()
+
   }
 
 } // EOF

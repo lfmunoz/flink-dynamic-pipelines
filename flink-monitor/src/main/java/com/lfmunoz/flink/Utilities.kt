@@ -7,13 +7,8 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.google.common.io.Resources
-import com.lfmunoz.flink.monitor.MonitorMessage
-import io.vertx.core.eventbus.EventBus
-import io.vertx.core.eventbus.Message
-import io.vertx.core.json.JsonObject
+import com.lfmunoz.flink.actions.producer.MonitorMessage
 import java.io.IOException
-import java.text.SimpleDateFormat
-import java.util.*
 import kotlin.reflect.KClass
 
 //________________________________________________________________________________

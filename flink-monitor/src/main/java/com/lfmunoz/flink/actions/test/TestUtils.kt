@@ -1,4 +1,4 @@
-package com.lfmunoz.flink.test
+package com.lfmunoz.flink.actions.test
 
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.lfmunoz.flink.mapper

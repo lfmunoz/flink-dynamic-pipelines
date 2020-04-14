@@ -1,4 +1,4 @@
-package com.lfmunoz.flink.test
+package com.lfmunoz.flink.actions.test
 
 import com.lfmunoz.flink.web.ActionInterface
 import com.lfmunoz.flink.web.WsPacket

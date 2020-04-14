@@ -1,13 +1,12 @@
 package com.lfmunoz.flink
 
-import com.lfmunoz.flink.kafka.KafkaProducerAction
-import com.lfmunoz.flink.test.TestAction
+import com.lfmunoz.flink.actions.producer.KafkaProducerAction
+import com.lfmunoz.flink.actions.test.TestAction
 import com.lfmunoz.flink.web.*
 import io.vertx.core.Handler
 import io.vertx.core.Vertx
 import io.vertx.core.VertxOptions
 import io.vertx.core.http.ServerWebSocket
-import org.fissore.slf4j.FluentLoggerFactory
 import org.koin.core.context.startKoin
 import org.koin.core.logger.Level
 import org.koin.core.qualifier.named

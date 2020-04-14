@@ -69,17 +69,17 @@ export default {
 .column-left{ 
   /* border: 1px solid red; */
    /* width: min-content; */
-  width: 20%
+  width: 33%
 
 }
 .column-middle{
   /* border: 1px solid red; */
-  width: 50%;
+  width: 33%;
 
  }
 .column-right{ 
   /* border: 1px solid red; */
- width: 30%;
+ width: 33%;
 }
 
 </style>

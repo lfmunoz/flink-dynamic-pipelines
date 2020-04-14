@@ -5,29 +5,34 @@
   <div class="kafkaGenerator">
     <h1>Kafka Generator</h1>
 
-    <div class="status">
-      {{statusUpdated}}
-      <x-label label="Is Producing" :value="statusObj.isProducing" />
-      <x-label label="Is Sampling" :value="statusObj.isSampling" />
-      <x-label label="Messages Received" :value="statusObj.messagesReceived" />
-      <x-label label="Messages Sent" :value="statusObj.messagesSent" />
-      <x-label label="Messages" :value="statusObj.message" />
+    <div class="config">
+      <button @click="start">START</button>
+      <button @click="stop">STOP</button>
+      <x-input label="Kafka Topic" value="5" />
+      <x-input label="Kafka Bootstrap Server" value="5" />
+
+      <x-input label="Messages Per Second" value="5" />
+      
+      <!-- <z-json-config /> -->
     </div>
 
+    <div class="sample-view">
+      <button @click="sample">SAMPLE</button>
+      <button @click="cancel">CANCEL</button>
+      <x-input label="Sample Interval" value="5" />
+    </div>
 
-    <button @click="start">START</button>
-    <button @click="stop">STOP</button>
-    <button @click="sample">SAMPLE</button>
-    <button @click="cancel">CANCEL</button>
-    <button @click="status">STATUS</button>
+    <div class="aggregate">
+      <z-object-view :values="aggregateSample" />
+    </div>
+
     <!-- {{statusObj}} -->
 
-    <button @click="debug">DEBUG</button>
+    <div class="debug">
+      <button @click="debug">DEBUG</button>
 
-    <div class="samples">
-      {{samples}}
+      <div class="samples">{{samples}}</div>
     </div>
-
   </div>
 </template>
 
@@ -42,16 +47,33 @@ import {
 } from "@/test/TestUtils.js";
 
 import { Code } from "@/websocket/ClientUtils.js";
+import zObjectView from "@/test/components/zObjectView.vue";
+// import zJsonConfig from "@/test/components/zJsonConfig.vue";
 
 // const statusEnabled = "Status Enabled"
 // const statusDisabled = "Status Disabled"
+
+var statusInterval = null;
+
+function getStatusOnInterval(callback) {
+  if (statusInterval != null) {
+    clearTimeout(statusInterval);
+    statusInterval = null;
+  }
+  statusInterval = setTimeout(() => {
+    callback();
+  }, 2000);
+}
 
 //--------------------------------------------------------------------------------------
 // Default
 //--------------------------------------------------------------------------------------
 export default {
   name: "zKafkaGenerator",
-  components: {},
+  components: {
+    zObjectView,
+    // zJsonConfig
+  },
   //--------------------------------------------------------------------------------------
   // DATA
   //--------------------------------------------------------------------------------------
@@ -61,9 +83,7 @@ export default {
       statusUpdated: Date.now(),
       // statusEnabled: statusDisabled,
       statusObj: {},
-      samples: [
-
-      ]
+      samples: []
     };
   },
   //--------------------------------------------------------------------------------------
@@ -71,21 +91,19 @@ export default {
   //--------------------------------------------------------------------------------------
   methods: {
     debug() {
-      console.log(this.samples)
-
+      console.log(this.samples);
     },
     updateStatus(status) {
       this.statusUpdate = Date.now();
       this.statusObj = status;
     },
     updateSamples(sample) {
-      if(this.samples.length >= 10) {
-        this.samples.shift()
-        this.samples.push(sample)
+      if (this.samples.length >= 10) {
+        this.samples.shift();
+        this.samples.push(sample);
       } else {
-        this.samples.push(sample)
+        this.samples.push(sample);
       }
-
     },
     async start() {
       const kafkaAction = buildDefaultKafkaAction();
@@ -112,11 +130,12 @@ export default {
         aWsPacket
       );
       obs$.subscribe(resp => {
-        console.log("subscribe resp");
-        console.log(resp);
-            const payload = JSON.parse(resp.payload);
-        this.updateSamples(payload)
-        // if (resp.code === Code.ACK) {
+        // console.log("subscribe resp");
+        // console.log(resp);
+        if (resp.code === Code.ACK) {
+          const payload = JSON.parse(resp.payload);
+          this.updateSamples(payload);
+        }
         // const payload = JSON.parse(resp.payload)
         // const body = JSON.parse(payload.body)
         // resolve(body)
@@ -141,12 +160,15 @@ export default {
       const aWsPacket = createWsPacketForKafka(kafkaAction);
       const kafkaStatus = await this.sendAndReceiveKafkaActionDTO(aWsPacket);
       this.updateStatus(kafkaStatus);
-      
     },
 
     // ________________________________________________________________________________
     // HELPER METHODS
     // ________________________________________________________________________________
+    statusOnInterval() {
+      getStatusOnInterval(this.status);
+    },
+
     async sendAndReceiveKafkaActionDTO(aWsPacket) {
       const obs$ = await this.$store.dispatch(
         "websocket/sendAndGetObservable",
@@ -168,13 +190,19 @@ export default {
         });
       });
     }
-
-
   },
   //--------------------------------------------------------------------------------------
   // COMPUTED
   //--------------------------------------------------------------------------------------
-  computed: {},
+  computed: {
+    aggregateSample() {
+      if (this.samples.length > 0) {
+        return this.samples[0].values;
+      } else {
+        return {};
+      }
+    }
+  },
   //--------------------------------------------------------------------------------------
   // MOUNTED
   //--------------------------------------------------------------------------------------
@@ -186,16 +214,30 @@ export default {
 <!-- STYLE -->
 <!-- ________________________________________________________________________________ -->
 <style>
+.kafkaGenerator {
+  border: 4px solid orange;
+}
+
+.config {
+  border: 4px solid lightblue;
+  margin: 10px;
+}
+
+.sample-view {
+  border: 4px solid lightseagreen;
+  margin: 10px;
+}
+
+.debug {
+  padding-top: 170px;
+}
+
+
 .test {
   border: 1px solid black;
 }
 
-.status {
-  border: 1px solid green;
-}
-
 .samples {
   border: 1px solid blue;
-
 }
 </style>
