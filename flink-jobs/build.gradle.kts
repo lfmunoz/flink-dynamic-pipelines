@@ -49,6 +49,13 @@ dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinCoroutinesVersion")
   implementation(kotlin("stdlib-jdk8", kotlinVersion))
   implementation(kotlin("reflect", kotlinVersion))
+  // KOTLIN SCRIPT
+  implementation(kotlin("script-runtime", kotlinVersion))
+  implementation(kotlin("script-util", kotlinVersion))
+  implementation(kotlin("compiler-embeddable", kotlinVersion))
+  implementation(kotlin("scripting-compiler-embeddable", kotlinVersion))
+  implementation(kotlin("script-util", kotlinVersion))
+  implementation("net.java.dev.jna:jna:4.2.2")
   // KAFKA
   implementation("org.apache.kafka:kafka-clients:2.2.1")
   // TEST

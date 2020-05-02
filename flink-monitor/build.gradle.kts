@@ -34,6 +34,8 @@ val artifactID = "flink-monitor"
 dependencies {
   // MISC
   implementation("com.google.guava:guava:21.0")
+  implementation("net.sf.expectit:expectit-core:0.9.0")
+  implementation("com.google.code.findbugs:jsr305:3.0.2")
   // LOGGING
   implementation("org.fissore:slf4j-fluent:0.12.0")
   implementation( "ch.qos.logback:logback-classic:1.2.3")
@@ -60,6 +62,9 @@ dependencies {
   implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8:$jacksonVersion")
   // KAFKA
   implementation("org.apache.kafka:kafka-clients:$kafkaVersion")
+  // https://mvnrepository.com/artifact/com.101tec/zkclient
+  implementation("com.101tec:zkclient:0.11")
+
   // VERTX
   implementation ("io.vertx:vertx-web-client:$vertxVersion")
   implementation ("io.vertx:vertx-junit5:$vertxVersion")
