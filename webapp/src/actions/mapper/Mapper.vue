@@ -3,33 +3,36 @@
 <!-- ________________________________________________________________________________ -->
 <template>
   <aside>
-    <h1>Mapper</h1>
+    <h1>Flink Mapper</h1>
     <div>
-      <button @click="readConfig">readConfig</button>
-      <button @click="writeConfig">writeConfig</button>
-
-
       <div class="config" :class="{ 'dirty' : isDirty}">
+        <button @click="readConfig">readConfig</button>
+        <button @click="writeConfig">writeConfig</button>
         <x-label label="Lasted Updated" :value="lastUpdated" />
-        <x-input label="Flink URL" v-model="config.kafkaConfig.bootstrapServer" />
+        <x-input label="BootStrap Server" v-model="config.kafkaConfig.bootstrapServer" />
+        <x-input label="Topic" v-model="config.kafkaConfig.topic" />
+        <x-input label="GroupId" v-model="config.kafkaConfig.groupId" />
+        <x-input label="Compression" v-model="config.kafkaConfig.compression" />
+        <x-input label="offset" v-model="config.kafkaConfig.offset" />
       </div>
 
       <!-- <div class="sample"> -->
-        <!-- <x-ace-editor height="500" v-model="stdin" /> -->
+      <!-- <x-ace-editor height="500" v-model="stdin" /> -->
       <!-- </div> -->
-
-      <zLambda :visible="true"/>
-
-      <!-- <z-json-config /> -->
+      <x-input label="NEW KEY" v-model="newKey" />
+      <button @click="newMapping">CREATE</button>
+      <div v-for="(value, key) in fullConfig" :key="key" class="lambda">
+        <x-toggle-view :label="key">
+          <button @click="removeMapping(key)">DELETE</button>
+          <x-ace-editor height="500" v-model="fullConfig[key]" />
+        </x-toggle-view>
+      </div>
     </div>
 
-    <!-- {{statusObj}} -->
-
-    <div class="debug">
-      <button @click="debug">DEBUG</button>
-
-      <!-- <div class="samples">{{samples}}</div> -->
-    </div>
+    <x-toggle-view label="SEND AND VIEW CONFIGURATION" class="config-view">
+      <button @click="sendMapper">SEND TO FLINK</button>
+      <json-viewer :value="fullConfig" theme="json-theme" />
+    </x-toggle-view>
   </aside>
 </template>
 
@@ -37,38 +40,18 @@
 <!-- SCRIPT -->
 <!-- ________________________________________________________________________________ -->
 <script>
-
 import { Code } from "@/websocket/ClientUtils.js";
 import {
+  buildKafkaSendMapper,
   buildKafkaReadConfig,
-  buildKafkaWriteConfig,
-  buildKafkaStart,
-} from "@/actions/kafkaProducer/KafkaProducerUtils.js";
+  buildKafkaWriteConfig
+} from "@/actions/mapper/MapperUtils.js";
 
-// import zObjectView from "@/test/components/zObjectView.vue";
-// import zJsonConfig from "@/test/components/zJsonConfig.vue";
-
-// const statusEnabled = "Status Enabled"
-// const statusDisabled = "Status Disabled"
-
-// var statusInterval = null;
-
-/*
-function getStatusOnInterval(callback) {
-  if (statusInterval != null) {
-    clearTimeout(statusInterval);
-    statusInterval = null;
-  }
-  statusInterval = setTimeout(() => {
-    callback();
-  }, 2000);
-}
-*/
-
-import zLambda from "@/actions/mapper/zLambda.vue"
-
-const defaultLambda = ` { data -> 2 + 2 } `
-
+const defaultLambda = `
+  override open fun main(m: MonitorMessage) : MapperResult  {
+    return MapperResult(values= mutableMapOf("two" to "2"))
+  } 
+`;
 
 //--------------------------------------------------------------------------------------
 // Default
@@ -76,7 +59,7 @@ const defaultLambda = ` { data -> 2 + 2 } `
 export default {
   name: "mapper",
   components: {
-    zLambda
+    // zLambda
     // zObjectView
     // zJsonConfig
   },
@@ -86,33 +69,37 @@ export default {
   data: function() {
     return {
       config: {
-        isProducing: String(false),
-        messagesSent: 0,
-        messageRatePerSecondInt: 3,
+        offset: 0,
+        lastMessage: "",
         kafkaConfig: {
           bootstrapServer: "localhost:9092",
-          topic: "default-topic",
+          topic: "mapper-topic",
           groupId: "default-groupId",
           compression: "none", // none, lz4
           offset: "none" // latest, earliest, none(use zookeper)
         }
       },
+      fullConfig: {},
+      newKey: `randomKey${Date.now()}`,
       lastUpdated: Date.now(),
-      stdin: defaultLambda,
-      isDirty: false,
-    }
+      isDirty: false
+    };
   },
   //--------------------------------------------------------------------------------------
   // METHODS
   //--------------------------------------------------------------------------------------
   methods: {
-    debug() {
-      console.log(this.samples);
+    newMapping() {
+      this.$set(this.fullConfig, this.newKey, defaultLambda);
+      this.newKey = `randomKey${Date.now()}`;
     },
+    removeMapping(key) {
+      this.$delete(this.fullConfig, key);
+    },
+
     setConfig(config) {
-      this.config.isProducing = String(config.isProducing);
-      this.config.messagesSent = config.messagesSent;
-      this.config.messageRatePerSecondInt = config.messageRatePerSecondInt;
+      this.config.offset = String(config.offset);
+      this.config.lastMessage = config.lastMessage;
       this.config.kafkaConfig.bootstrapServer =
         config.kafkaConfig.bootstrapServer;
       this.config.kafkaConfig.topic = config.kafkaConfig.topic;
@@ -125,47 +112,28 @@ export default {
     },
 
     async readConfig() {
-      const aWsPacket = buildKafkaReadConfig()
-      const result = await this.sendAndReceive(aWsPacket)
-      this.setConfig(result)
-      this.lastUpdated =  Date.now()
+      const aWsPacket = buildKafkaReadConfig();
+      const result = await this.sendAndReceive(aWsPacket);
+      this.setConfig(result);
+      console.log(result)
+      this.lastUpdated = Date.now();
     },
     async writeConfig() {
-      const aWsPacket = buildKafkaWriteConfig(this.config)
-      const result = await this.sendAndReceive(aWsPacket)
-      this.setConfig(result)
-      this.lastUpdated =  Date.now()
+      const aWsPacket = buildKafkaWriteConfig(this.config);
+      const result = await this.sendAndReceive(aWsPacket);
+      // this.setConfig(result);
+      console.log(result);
+      this.lastUpdated = Date.now();
     },
 
-
-
-    async start() {
-      this.stdin = ''
-      const aWsPacket = buildKafkaStart();
-      const obs$ = await this.$store.dispatch(
-        "websocket/sendAndGetObservable",
-        aWsPacket
-      );
-      obs$.subscribe(resp => {
-        // console.log("subscribe resp");
-        // console.log(resp);
-        if (resp.code === Code.ACK) {
-          const payload = JSON.parse(resp.payload);
-          const body = JSON.parse(payload.body);
-          this.stdin = `${this.stdin}\n${JSON.stringify(body, null, 2)}`
-          // this.updateSamples(payload);
-        }
-        // const payload = JSON.parse(resp.payload)
-        // const body = JSON.parse(payload.body)
-        // resolve(body)
-        // } else if (resp.code === Code.FACK) {
-        // } else if (resp.code === Code.LACK) {
-        // } else if (resp.code === Code.ERROR) {
-        // }
-      });
+    async sendMapper() {
+      const aWsPacket = buildKafkaSendMapper(this.fullConfig);
+      const result = await this.sendAndReceive(aWsPacket);
+      // this.setConfig(result);
+      console.log(result);
+      this.lastUpdated = Date.now();
     },
 
-  
     // ________________________________________________________________________________
     // HELPER METHODS
     // ________________________________________________________________________________
@@ -180,8 +148,8 @@ export default {
           // console.log(resp)
           if (resp.code === Code.ACK) {
             const payload = JSON.parse(resp.payload);
-            const body = JSON.parse(payload.body);
-            resolve(body);
+            // const body = JSON.parse(payload.body);
+            resolve(this.returnStringOrObject(payload.body));
             // } else if (resp.code === Code.FACK) {
             // } else if (resp.code === Code.LACK) {
           } else if (resp.code === Code.ERROR) {
@@ -190,15 +158,27 @@ export default {
         });
       });
     },
+
+    returnStringOrObject(body) {
+      try {
+        return JSON.parse(body);
+      } catch(e) {
+        return body
+      }
+    }
+
   },
+
+
+
   //--------------------------------------------------------------------------------------
   // WATCH
   //--------------------------------------------------------------------------------------
   watch: {
     config: {
-      handler(val) {
-        console.log("kafka producer config change");
-        console.log(val);
+      handler() {
+        // console.log("kafka producer config change");
+        // console.log(val);
         this.isDirty = true;
         // do stuff
       },
@@ -209,12 +189,8 @@ export default {
   // COMPUTED
   //--------------------------------------------------------------------------------------
   computed: {
-    aggregateSample() {
-      if (this.samples.length > 0) {
-        return this.samples[0].values;
-      } else {
-        return {};
-      }
+    stdout() {
+      return JSON.stringify(this.fullConfig, null, 2).replace("\n//", "\n");
     }
   },
   //--------------------------------------------------------------------------------------
@@ -228,14 +204,26 @@ export default {
 <!-- STYLE -->
 <!-- ________________________________________________________________________________ -->
 <style scoped>
-aside {
-  border: 4px solid orange;
-   padding: 10px;
+.lambda {
+  margin-top: 5px;
+  border: 2px solid black;
 }
+
+.config-view {
+  margin-top: 5px;
+  border: 2px solid magenta;
+}
+
+aside {
+  /* border: 4px solid orange; */
+  margin: 10px;
+}
+
 .config {
   border: 2px solid green;
    padding: 10px;
 }
+
 
 .dirty {
   border-left: 5px solid red;

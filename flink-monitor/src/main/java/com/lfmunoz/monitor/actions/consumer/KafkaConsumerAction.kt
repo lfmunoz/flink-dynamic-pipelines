@@ -24,7 +24,10 @@ class KafkaConsumerAction : ActionInterface {
 
   // CONSUMER
   @get:Synchronized @set:Synchronized
-  private var aKafkaConfig = KafkaConfig(groupId = "groupId-${Random.nextInt(1000,9999)}")
+  private var aKafkaConfig = KafkaConfig(
+    groupId = "groupId-${Random.nextInt(1000,9999)}",
+    topic = "output-topic"
+  )
   private val isSampling = AtomicBoolean(false)
   private val messagesReceived = AtomicLong(0L)
   private val samplingPeriod = AtomicLong(1_000L)

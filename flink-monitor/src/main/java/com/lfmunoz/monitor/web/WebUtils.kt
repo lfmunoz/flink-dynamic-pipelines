@@ -94,7 +94,7 @@ enum class WsPacketType(val id: Int) {
   KAFKA_ADMIN(3),
   KAFKA_PRODUCER(4),
   KAFKA_CONSUMER(5),
-  MAPPER(6),
+  KAFKA_MAPPER(6),
 
   INVALID(12)
 }

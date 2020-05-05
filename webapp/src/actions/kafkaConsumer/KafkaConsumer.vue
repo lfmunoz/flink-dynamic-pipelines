@@ -3,7 +3,7 @@
 <!-- ________________________________________________________________________________ -->
 <template>
   <aside>
-    <h1>Kafka Consumer</h1>
+    <h1>Kafka Output</h1>
 
     <div>
       <div class="config" :class="{ 'dirty' : isDirty}">
@@ -21,18 +21,10 @@
         <x-label label="Is Sampling" :value="config.isSampling" />
         <x-label label="Messages Received" :value="config.messagesReceived" />
         <button @click="start">START</button>
-        <x-ace-editor height="500" v-model="stdin" />
+        <json-viewer expanded :expand-depth="3" :value="stdin" theme="json-theme" />
       </div>
-      <!-- <z-json-config /> -->
     </div>
 
-    <!-- {{statusObj}} -->
-
-    <div class="debug">
-      <button @click="debug">DEBUG</button>
-
-      <!-- <div class="samples">{{samples}}</div> -->
-    </div>
   </aside>
 </template>
 
@@ -85,13 +77,13 @@ export default {
         messagesReceived: 0,
         kafkaConfig: {
           bootstrapServer: "localhost:9092",
-          topic: "default-topic",
+          topic: "output-topic",
           groupId: "default-groupId",
           compression: "none", // none, lz4
           offset: "none" // latest, earliest, none(use zookeper)
         }
       },
-      stdin: "",
+      stdin: {},
       lastUpdated: Date.now(),
       isDirty: false
     };
@@ -144,7 +136,9 @@ export default {
         if (resp.code === Code.ACK) {
           const payload = JSON.parse(resp.payload);
           const body = JSON.parse(payload.body);
-          this.stdin = `${this.stdin}\n${JSON.stringify(body, null, 2)}`
+           if(Object.keys(body).length > 0 ) {
+            this.stdin = body
+          }
         }
       });
     },
@@ -217,7 +211,7 @@ export default {
 <!-- ________________________________________________________________________________ -->
 <style scoped>
 aside {
-  border: 4px solid purple;
+  /* border: 4px solid purple; */
     padding: 10px;
 }
 .config {

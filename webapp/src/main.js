@@ -7,6 +7,11 @@ import router from './router'
 import store from './store'
 
 
+// ________________________________________________________________________________
+// THIRD PARTY COMPONENTS
+// ________________________________________________________________________________
+import JsonViewer from "vue-json-viewer";
+Vue.component('json-viewer', JsonViewer)
 
 // ________________________________________________________________________________
 // GLOBAL COMPONENTS
@@ -18,6 +23,7 @@ import xThreeColumn from "@/components/global/xThreeColumn.vue";
 import xTwoColumn from "@/components/global/xTwoColumn.vue";
 import xSelect from "@/components/global/xSelect.vue";
 import xAceEditor from "@/components/global/xAceEditor.js";
+import xToggleView from "@/components/global/xToggleView.vue";
 Vue.component('x-tab', xTab)
 Vue.component('x-three-column', xThreeColumn)
 Vue.component('x-input', xInput)
@@ -25,6 +31,7 @@ Vue.component('x-label', xLabel)
 Vue.component('x-two-column', xTwoColumn)
 Vue.component('x-select', xSelect)
 Vue.component('x-ace-editor', xAceEditor)
+Vue.component('x-toggle-view', xToggleView)
 
 // ________________________________________________________________________________
 // SYSTEM COMPONENTS

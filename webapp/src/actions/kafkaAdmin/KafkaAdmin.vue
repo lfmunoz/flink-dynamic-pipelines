@@ -5,11 +5,14 @@
   <aside>
     <h1>Kafka Admin</h1>
     <div class="status">
+        <x-label label="Lasted Updated" :value="lastUpdated" />
+    <x-input label="Bootstrap Server" v-model="bootstrapServer" />
+        <x-input label="Zookeeper URL" v-model="zooKeeper" />
+
       <button @click="topics">TOPICS</button>
       <button @click="consumers">CONSUMERS</button>
       <button @click="clear">CLEAR</button>
-      <x-label label="Lasted Updated" :value="lastUpdated" />
-      <x-ace-editor height="200" v-model="stdin" />
+      <x-ace-editor height="400" v-model="stdin" />
     </div>
   </aside>
 </template>
@@ -43,6 +46,8 @@ export default {
   //--------------------------------------------------------------------------------------
   data: function() {
     return {
+      bootstrapServer: "localhost:9092",
+      zooKeeper: "localhost:2180",
       lastUpdated: Date.now(),
       stdin: ""
     };
@@ -55,6 +60,9 @@ export default {
     clear() {
       this.stdin = ""
     },
+
+
+
 
     async topics() {
       this.clear()

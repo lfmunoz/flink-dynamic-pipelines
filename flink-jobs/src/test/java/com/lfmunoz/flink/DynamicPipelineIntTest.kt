@@ -58,7 +58,10 @@ class DynamicPipelineIntTest {
 
       val broadcastMapperStream = jobCtx.env.setParallelism(1)
         .kafkaSource(jobCtx.mapperKafka)
-        .map { mapper.readValue(it.value, mapToStringOfStringType) as Map<String, String> }
+        .map {
+          println(it.value.toString())
+          mapper.readValue(it.value, mapToStringOfStringType) as Map<String, String>
+        }
         .returns(MapOfStringToString)
         .broadcast(mapperStateDescriptor)
 

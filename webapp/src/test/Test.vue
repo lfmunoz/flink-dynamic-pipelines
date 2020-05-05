@@ -2,54 +2,48 @@
 <!-- TEMPLATE-->
 <!-- ________________________________________________________________________________ -->
 <template>
-  <div class="test">
+  <section>
     <h1>TestAction</h1>
-    <!-- <z-command /> -->
-
 
     <KafkaAdmin />
 
+    <x-three-column>
+      <template v-slot:left>
+        <KafkaProducer />
+      </template>
 
-      <x-three-column>
-          <template v-slot:left>
-    <KafkaProducer />
+      <template v-slot:middle>
+        <mapper />
+      </template>
 
-          </template>
-          <template v-slot:middle>
-          <div class="test">
-            <mapper/>
-            <!-- <x-key-value /> -->
-          </div>
-          </template>
-            <template v-slot:right>
-    <KafkaConsumer />
-            </template>
-      </x-three-column>
+      <template v-slot:right>
+        <KafkaConsumer />
+      </template>
 
-  </div>
+    </x-three-column>
+  </section>
 </template>
 
 <!-- ________________________________________________________________________________ --> 
 <!-- SCRIPT -->
 <!-- ________________________________________________________________________________ -->
 <script>
-
-import KafkaProducer from "@/actions/kafkaProducer/KafkaProducer.vue"
-import KafkaConsumer from "@/actions/kafkaConsumer/KafkaConsumer.vue"
-import KafkaAdmin from "@/actions/kafkaAdmin/KafkaAdmin.vue"
-import Mapper from "@/actions/mapper/Mapper.vue"
+import KafkaProducer from "@/actions/kafkaProducer/KafkaProducer.vue";
+import KafkaConsumer from "@/actions/kafkaConsumer/KafkaConsumer.vue";
+import KafkaAdmin from "@/actions/kafkaAdmin/KafkaAdmin.vue";
+import Mapper from "@/actions/mapper/Mapper.vue";
 
 //--------------------------------------------------------------------------------------
 // Default
 //--------------------------------------------------------------------------------------
 export default {
   name: "test",
-  components: { 
+  components: {
     // zCommand,
     KafkaAdmin,
     Mapper,
     KafkaConsumer,
-    KafkaProducer,
+    KafkaProducer
     // xKeyValue
   },
   //--------------------------------------------------------------------------------------
@@ -57,14 +51,14 @@ export default {
   //--------------------------------------------------------------------------------------
   data: function() {
     return {
-        statusUpdated: Date.now(),
-          statusObj: {},
+      statusUpdated: Date.now(),
+      statusObj: {}
     };
   },
   //--------------------------------------------------------------------------------------
   // METHODS
   //--------------------------------------------------------------------------------------
-  methods: { },
+  methods: {},
   //--------------------------------------------------------------------------------------
   // COMPUTED
   //--------------------------------------------------------------------------------------
@@ -80,13 +74,4 @@ export default {
 <!-- STYLE -->
 <!-- ________________________________________________________________________________ -->
 <style>
-.test {
-  border: 1px solid black;
-}
-
-.status {
-  border: 1px solid green;
-  margin: 10px;
-}
-
 </style>

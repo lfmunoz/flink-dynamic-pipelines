@@ -13,14 +13,13 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import org.fissore.slf4j.FluentLoggerFactory
 
-class KafkaAdminAction : ActionInterface {
+class KafkaAdminAction(
+  private val aKafkaAdminBare: KafkaAdminBash
+) : ActionInterface {
 
   companion object {
     private val Log = FluentLoggerFactory.getLogger(KafkaAdminAction::class.java)
   }
-
-  private val bash = BashService()
-  private val aKafkaAdminBare = KafkaAdminBash(bash)
 
   private val job = SupervisorJob()
   private val context = newSingleThreadContext("kafkaAction")

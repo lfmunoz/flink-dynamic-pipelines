@@ -5,6 +5,8 @@ import com.lfmunoz.monitor.actions.test.TestAction
 import com.lfmunoz.flink.web.*
 import com.lfmunoz.monitor.actions.consumer.KafkaConsumerAction
 import com.lfmunoz.monitor.actions.kafkaAdmin.KafkaAdminAction
+import com.lfmunoz.monitor.actions.mapper.KafkaMapperAction
+import com.lfmunoz.monitor.kafka.KafkaAdminBash
 import io.vertx.core.Handler
 import io.vertx.core.Vertx
 import io.vertx.core.VertxOptions
@@ -21,19 +23,25 @@ val myModule = module(createdAtStart = true) {
   // VERTX
   single { VertxOptions() }
   single { Vertx.vertx(get()) }
+  // SERVICES
+  single {BashService()}
+  single { KafkaAdminBash(get()) }
   // ACTIONS
   single(named("TestAction")) { TestAction() as ActionInterface }
   single(named("KafkaProducerAction")) { KafkaProducerAction() as ActionInterface }
   single(named("KafkaConsumerAction")) { KafkaConsumerAction() as ActionInterface }
-  single(named("KafkaAdminAction")) { KafkaAdminAction() as ActionInterface }
+  single(named("KafkaAdminAction")) { KafkaAdminAction(get()) as ActionInterface }
+  single(named("KafkaMapperAction")) { KafkaMapperAction(get()) as ActionInterface }
   single(named("ActionsMap")) {
     hashMapOf<Int, ActionInterface>(
       WsPacketType.TEST.id to get(named("TestAction")),
       WsPacketType.KAFKA_PRODUCER.id to get(named("KafkaProducerAction")),
       WsPacketType.KAFKA_CONSUMER.id to get(named("KafkaConsumerAction")),
+      WsPacketType.KAFKA_MAPPER.id to get(named("KafkaMapperAction")),
       WsPacketType.KAFKA_ADMIN.id to get(named("KafkaAdminAction"))
     )
   }
+
 }
 
 fun main() {

@@ -3,17 +3,15 @@
 <!-- ________________________________________________________________________________ -->
 <template>
   <aside>
-    <h1>Kafka Producer</h1>
+    <h1>Kafka Input</h1>
 
     <div>
-      <button @click="readConfig">readConfig</button>
-      <button @click="writeConfig">writeConfig</button>
 
 
       <div class="config" :class="{ 'dirty' : isDirty}">
+        <button @click="readConfig">readConfig</button>
+        <button @click="writeConfig">writeConfig</button>
         <x-label label="Lasted Updated" :value="lastUpdated" />
-
-
         <x-input label="BootStrap Server" v-model="config.kafkaConfig.bootstrapServer" />
         <x-input label="Topic" v-model="config.kafkaConfig.topic" />
         <x-input label="GroupId" v-model="config.kafkaConfig.groupId" />
@@ -26,19 +24,11 @@
         <x-input label="Messages Per Second" v-model="config.messageRatePerSecondInt" />
         <x-label label="Messages Sent" :value="config.messagesSent" />
         <button @click="start">START</button>
-        <x-ace-editor height="500" v-model="stdin" />
+        <button @click="writeConfig">STOP</button>
+          <json-viewer expanded :expand-depth="3" :value="stdin" theme="json-theme" />
       </div>
-
-      <!-- <z-json-config /> -->
     </div>
 
-    <!-- {{statusObj}} -->
-
-    <div class="debug">
-      <button @click="debug">DEBUG</button>
-
-      <!-- <div class="samples">{{samples}}</div> -->
-    </div>
   </aside>
 </template>
 
@@ -91,17 +81,17 @@ export default {
       config: {
         isProducing: String(false),
         messagesSent: 0,
-        messageRatePerSecondInt: 3,
+        messageRatePerSecondInt: 1,
         kafkaConfig: {
           bootstrapServer: "localhost:9092",
-          topic: "default-topic",
+          topic: "input-topic",
           groupId: "default-groupId",
           compression: "none", // none, lz4
           offset: "none" // latest, earliest, none(use zookeper)
         }
       },
       lastUpdated: Date.now(),
-      stdin: "",
+      stdin: {},
       isDirty: false,
     }
   },
@@ -143,7 +133,6 @@ export default {
 
 
     async start() {
-      this.stdin = ''
       const aWsPacket = buildKafkaStart();
       const obs$ = await this.$store.dispatch(
         "websocket/sendAndGetObservable",
@@ -155,7 +144,11 @@ export default {
         if (resp.code === Code.ACK) {
           const payload = JSON.parse(resp.payload);
           const body = JSON.parse(payload.body);
-          this.stdin = `${this.stdin}\n${JSON.stringify(body, null, 2)}`
+          // console.log(payload)
+          if(Object.keys(body).length > 0 ) {
+            this.stdin = body
+          }
+          // this.stdin = `${this.stdin}\n${JSON.stringify(body, null, 2)}`
           // this.updateSamples(payload);
         }
         // const payload = JSON.parse(resp.payload)
@@ -199,9 +192,9 @@ export default {
   //--------------------------------------------------------------------------------------
   watch: {
     config: {
-      handler(val) {
-        console.log("kafka producer config change");
-        console.log(val);
+      handler() {
+        // console.log("kafka producer config change");
+        // console.log(val);
         this.isDirty = true;
         // do stuff
       },
@@ -232,9 +225,14 @@ export default {
 <!-- ________________________________________________________________________________ -->
 <style scoped>
 aside {
-  border: 4px solid orange;
+  /* border: 4px solid orange; */
    padding: 10px;
 }
+
+.sample {
+  min-height: 800px;
+}
+
 .config {
   border: 2px solid green;
    padding: 10px;

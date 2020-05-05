@@ -72,4 +72,13 @@ internal class KafkaAdminBareIntTest {
     }
   }
 
+
+  @Test
+  fun `last message`() {
+    runBlocking {
+      val result = kafkaAdmin.getLastMessage("mapper-topic")
+      println(result)
+    }
+  }
+
 }

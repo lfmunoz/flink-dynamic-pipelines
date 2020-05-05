@@ -33,8 +33,8 @@ class KafkaProducerAction : ActionInterface {
   private val scope = CoroutineScope(context + job)
 
   // PRODUCER
-  // @GuardedBy access only from context
-  private var aKafkaConfig = KafkaConfig()
+  @get:Synchronized @set:Synchronized
+  private var aKafkaConfig = KafkaConfig( topic = "input-topic")
   private var isProducing = AtomicBoolean(false)
   private var messagesSent = AtomicLong(0L)
   private var messageRatePerSecondInt = AtomicInteger(1)

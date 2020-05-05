@@ -1,10 +1,6 @@
 <template>
   <div id="app">
     <app-nav/>
-    <div id="nav">
-      <router-link to="/">Home</router-link>|
-      <router-link to="/about">About</router-link>
-    </div>
     <router-view />
   </div>
 </template>
@@ -60,4 +56,29 @@
 #nav a.router-link-exact-active {
   color: #42b983;
 }
+
+
+  /** vue-json-viewr **/
+.json-theme {
+  background-clip: lightblue;
+  text-align: left;
+}
+
+.jv-container .jv-code {
+    background-color: lightblue;
+}
+
+.jv-key {
+  color: #370000;
+  font-weight:900;
+  word-break: break-word;
+  white-space: normal;
+}
+
+.jv-item.jv-string {
+  color:black;
+  word-break: break-word;
+  white-space: normal;
+}
+
 </style>

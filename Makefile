@@ -114,5 +114,11 @@ test:
 # 	 docker exec -it kafka-${RND} bin/kafka-consumer-groups.sh  --bootstrap-server kafkaNet:9092 --describe --group octopus
 # 	 docker exec -it kafka-${RND} bin/kafka-topics.sh  --zookeeper zooKeeperNet:2181 --list
 # 	 docker exec -it kafka-${RND} bin/kafka-topics.sh  --zookeeper zooKeeperNet:2181 --describe --topic test-collect_mm
-	 docker exec -it kafka-${RND} bin/kafka-log-dirs.sh --bootstrap-server kafkaNet:9092 --describe  --topic-list test-collect_mm
+# 	 docker exec -it kafka-${RND} bin/kafka-log-dirs.sh --bootstrap-server kafkaNet:9092 --describe  --topic-list test-collect_mm
+	 docker exec -it kafka-${RND} bin/kafka-run-class.sh kafka.tools.GetOffsetShell --broker-list kafkaNet:9092 --topic mapper-topic
+# 	 docker exec -it kafka-${RND} bin/kafka-console-consumer.sh --bootstrap-server kafkaNet:9092 --topic mapper-topic --offset 0 --partition 0
+
+
+prod:
+	 docker exec -it kafka-${RND} bin/kafka-console-producer.sh --broker-list kafkaNet:9092 --topic my-topic
 

@@ -2,6 +2,8 @@ package com.lfmunoz.monitor.kafka
 
 import com.lfmunoz.monitor.BashService
 import com.lfmunoz.monitor.CmdResult
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import org.I0Itec.zkclient.ZkClient
 import org.apache.kafka.clients.admin.AdminClient
@@ -55,9 +57,37 @@ class KafkaAdminBash(
     return bash.runCmd("${commandPrefix}${command}").toList()
   }
 
+//  docker exec -it kafka-${RND} bin/kafka-run-class.sh kafka.tools.GetOffsetShell --broker-list kafkaNet:9092 --topic mapper-topic
+//docker exec -it kafka-${RND} bin/kafka-console-consumer.sh --bootstrap-server kafkaNet:9092 --topic mapper-topic --offset 0 --partition 0
+//  docker exec -it kafka-${RND} bin/kafka-console-producer.sh --broker-list kafkaNet:9092 --topic my-topic
+
+//  <confluent-path>/bin/kafka-console-consumer –topic amazingTopic -
+//  - bootstrap-server localhost:9093 --new-consumer --consumer-
+//  property
+//  group.id=my-group
+
+
+  suspend fun getLastMessage(topicName: String) : String {
+    val getOffsetCmd = "kafka-run-class.sh kafka.tools.GetOffsetShell --broker-list $bootstrapServer --topic $topicName"
+    val offsetResult = bash.runCmd("${commandPrefix}${getOffsetCmd}")
+      .filter{ it is CmdResult.Stdout}.map{ (it as CmdResult.Stdout).line }.toList()
+
+    val partition  = offsetResult.first().split(":")[1].toInt()
+    val offset = offsetResult.first().split(":")[2].toInt() - 1
+    if(offset < 0) { return "no messages" } // no messages
+    val getLastMessage = "kafka-console-consumer.sh --bootstrap-server $bootstrapServer  --topic $topicName --timeout-ms 4000 --max-messages 1 --offset $offset --partition $partition"
+    val lastMessageResult = bash.runCmd("${commandPrefix}${getLastMessage}", 5_000L)
+      .filter{ it is CmdResult.Stdout}.map{ (it as CmdResult.Stdout).line }
+      .toList()
+//    println(lastMessageResult)
+    return lastMessageResult.first()
+  }
+
 }
 
-
+// ________________________________________________________________________________
+// EXPERIMENTAL
+// ________________________________________________________________________________
 class KafkaAdminBare(
   private val aKafkaAdminConfig: KafkaAdminConfig
 ) {
@@ -95,11 +125,10 @@ class KafkaAdminBare(
       return groups.map{ group -> group.groupId() }
     }
   }
-
-
-
-
 }
+
+
+
 
 class ZooKeeperAdmin(
   private val aKafkaAdminConfig: KafkaAdminConfig

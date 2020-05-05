@@ -23,7 +23,7 @@ val mapper = jacksonObjectMapper()
 val ListOfIntType = mapper.typeFactory.constructCollectionType(List::class.java, Int::class.java)
 val ListOfMonitorMessageType = mapper.typeFactory.constructCollectionType(List::class.java, MonitorMessage::class.java)
 val ListOfByteArrayType = mapper.typeFactory.constructCollectionType(List::class.java, ByteArray::class.java)
-
+val MapOfStringStringType = mapper.typeFactory.constructMapType(Map::class.java, String::class.java, String::class.java)
 
 fun <T: Any> String.toKotlinObject(c: KClass<T>): T {
   return mapper.readValue(this, c.java)

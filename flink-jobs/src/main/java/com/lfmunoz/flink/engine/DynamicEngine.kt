@@ -1,26 +1,44 @@
 package com.lfmunoz.flink.engine
 
 import com.lfmunoz.flink.monitor.MonitorMessage
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.withTimeout
+import org.apache.flink.streaming.api.functions.co.BroadcastProcessFunction
+import org.apache.flink.util.Collector
+import org.fissore.slf4j.FluentLoggerFactory
 import java.io.Serializable
 import java.util.concurrent.ConcurrentHashMap
 import javax.annotation.concurrent.ThreadSafe
 import javax.script.ScriptEngineManager
 
-/**
- * Singleton - Dynamic Engine
- */
+//________________________________________________________________________________
+// FLINK MAPPER PROCCESS FUNCTION
+//________________________________________________________________________________
+object DynamicMapperProcessFunction: BroadcastProcessFunction<MonitorMessage, Map<String, String>, MapperResult>() {
+  override fun processElement(value: MonitorMessage, ctx: ReadOnlyContext, out: Collector<MapperResult>) {
+    println("[got element] - $value")
+    out.collect(DynamicEngine.evaluate(value))
+  }
+
+  override fun processBroadcastElement(value: Map<String, String>, ctx: Context, out: Collector<MapperResult>) {
+    println("[got config] - $value")
+    DynamicEngine.update(value)
+  }
+
+}
+
+//________________________________________________________________________________
+// SINGLETON - DYNAMIC ENGINE
+//________________________________________________________________________________
 @ThreadSafe
 object DynamicEngine {
 
+  private val Log = FluentLoggerFactory.getLogger(DynamicEngine::class.java)
+
   private val engineKts = ScriptEngineManager().getEngineByExtension("kts")
 
-  // These imports will be inserted to all scripts because they are required
-  private val scriptPrefix = """
-   import com.lfmunoz.flink.monitor.MonitorMessage
-   import com.lfmunoz.flink.monitor.MapperResult
-  """.trimIndent()
-
-  private val mapperFunctions: ConcurrentHashMap<String, MapperObj> = ConcurrentHashMap()
+  private val mapperFunctions: ConcurrentHashMap<String, ScriptCtx> = ConcurrentHashMap()
 
   init {
     // This will preload the script engine, we don't want it lazy loaded
@@ -40,10 +58,12 @@ object DynamicEngine {
   @Synchronized fun insert(key: String, script: String) {
     try {
       // calling eval is not thread safe, should rarely be called
-      val lambdaFunc  = engineKts.eval(preEval(script)) as MonitorLambda
-      mapperFunctions[key] = MapperObj(script, lambdaFunc)
+      engineKts.put("key", key)
+      engineKts.put("script", script)
+      val aScriptCtx = engineKts.eval(generateKts(key, script)) as ScriptCtx
+      mapperFunctions[key] = aScriptCtx
     } catch(e: RuntimeException) {
-      println("could not compile key=$key script=$script")
+      Log.warn().withCause(e).log("could not compile key=$key script=$script")
       e.printStackTrace()
     }
   }
@@ -55,7 +75,12 @@ object DynamicEngine {
   fun evaluate(monitorMessage: MonitorMessage) : MapperResult {
     val start =System.currentTimeMillis()
     return  mapperFunctions.entries.map {
-      it.value.lambda.invoke(monitorMessage)
+      try {
+        it.value.main(monitorMessage)
+      } catch(e: RuntimeException) {
+        Log.warn().withCause(e).log("error running key=${it.key}")
+        MapperResult()
+      }
     }.fold(MapperResult()) { acc: MapperResult, item: MapperResult ->
       acc.values.putAll(item.values)
       acc
@@ -69,13 +94,13 @@ object DynamicEngine {
   }
 
   fun mapOfLambdas() : Map<String, String> {
-    return mapperFunctions.entries.associate { it.key to it.value.script }
+    return mapperFunctions.entries.associate { it.key to it.value.script}
   }
 
   //________________________________________________________________________________
   // PRIVATE METHODS
   //________________________________________________________________________________
-  private fun preEval(script: String) : String { return scriptPrefix + script }
+
 
 }
 
@@ -100,7 +125,7 @@ data class MapperResult(
   var version: Int = 0,
   var startTime: Long = 0,
   var computeDelta: Long =  0,
-  var values: MutableMap<String, String> = mutableMapOf()
+  var values: MutableMap<String, Any?> = mutableMapOf()
 ) : Serializable {
   constructor(m: MonitorMessage): this(m.id, m.informTime, m.version) {
     startTime = System.currentTimeMillis()
