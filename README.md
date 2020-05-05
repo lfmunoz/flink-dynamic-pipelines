@@ -1,5 +1,7 @@
 #  Flink Dynamic Pipeline
 
+[![Build Status](https://travis-ci.org/lfmunoz/flink-dynamic-pipelines.svg?branch=master)](https://travis-ci.org/lfmunoz/flink-dynamic-pipelines)
+
 This application is an attempt to create dynamic Flink pipelines.
 
 There is a Kafka stream which has various mapper functions, these are Kotlin Scripts that

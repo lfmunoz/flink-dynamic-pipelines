@@ -9,16 +9,8 @@
 
 #________________________________________________________________________________
 #  PRODUCTION
-#  LUIS CLUSTER
-#     ELASTIC SERVER 10.37.120.197
-#     BVT SERVER: 10.37.120.52
-#     FLINK: http://oc112-22.maas.auslab.2wire.com:8081/
-#  PEIDONG CLUSTER
-#     bootstrapServer = "10.37.240.46:9094"
-#     rabbitmq = "amqp://guest:guest@10.37.240.51:5672"
-#     http://10.37.240.51:15672/
 #________________________________________________________________________________
-FLINK_HOST=oc112-22.maas.auslab.2wire.com
+FLINK_HOST=loaclhost
 FLINK_PORT=8081
 # FLINK_JAR=rabbit-kafka-bridge/build/libs/rabbit-kafka-bridge-0.0.6-all.jar
 FLINK_JAR=build/libs/rabbit-kafka-bridge-0.0.6-all.jar
