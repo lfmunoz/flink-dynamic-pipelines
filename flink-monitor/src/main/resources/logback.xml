@@ -11,6 +11,6 @@
   </root>
 
   <logger name="net.schmizz.sshj" level="error"/>
-  <logger name="com.c0ckp1t" level="debug"/>
+  <logger name="com.lfmunoz" level="debug"/>
 
 </configuration>
