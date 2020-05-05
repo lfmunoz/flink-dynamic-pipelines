@@ -48,105 +48,108 @@ export default {
     render: function (h) {
         var height = this.height ? this.px(this.height) : '100%'
         var width = this.width ? this.px(this.width) : '100%'
-        return h('div',{
+        return h('div', {
             attrs: {
-                style: "height: " + height  + '; width: ' + width, 
+                style: "height: " + height + '; width: ' + width,
                 class: "editor"
             }
         })
     },
-    props:{
+    props: {
         view: String,
-        value:String,
-        lang:true,
-        theme:String,
-        height:true,
-        width:true,
-        options:Object
+        value: String,
+        lang: true,
+        theme: String,
+        height: true,
+        width: true,
+        options: Object
     },
     data: function () {
         return {
-            editor:null,
-            lock: false 
+            editor: null,
+            contentBackup: "",
+            lock: false
         }
     },
     methods: {
-        px:function (n) {
-            if( /^\d*$/.test(n) ){
-                return n+"px";
+        px: function (n) {
+            if (/^\d*$/.test(n)) {
+                return n + "px";
             }
             return n;
         }
     },
-    watch:{
-        view: function(val) {
-            // console.log(":vie... watch")
-            this.editor.session.setValue(val,1);
+    watch: {
+        // view: function (aString) {
+        // if (typeof aString !== 'undefined'){
+        // this.editor.session.setValue(aString, 1);
+        // }
 
+        // },
+        value: function (val) {
+            if (this.contentBackup !== val) {
+                this.editor.session.setValue(val, 1);
+                this.contentBackup = val;
+            }
         },
-        value: function () {
-            // console.log("ace x value change")
-            // this.lock = true
-            // if(va)
-            // this.editor.session.setValue(val,1);
+        theme: function (newTheme) {
+            this.editor.setTheme('ace/theme/' + newTheme);
         },
-        theme:function (newTheme) {
-            this.editor.setTheme('ace/theme/'+newTheme);
+        lang: function (newLang) {
+            this.editor.getSession().setMode(typeof newLang === 'string' ? ('ace/mode/' + newLang) : newLang);
         },
-        lang:function (newLang) {
-            this.editor.getSession().setMode(typeof newLang === 'string' ? ( 'ace/mode/' + newLang ) : newLang);
-        },
-        options:function(newOption){
+        options: function (newOption) {
             this.editor.setOptions(newOption);
         },
-        height:function(){
-            this.$nextTick(function(){
+        height: function () {
+            this.$nextTick(function () {
                 this.editor.resize()
             })
         },
-        width:function(){
-            this.$nextTick(function(){
+        width: function () {
+            this.$nextTick(function () {
                 this.editor.resize()
             })
         }
     },
-    beforeDestroy: function() {
+    beforeDestroy: function () {
         this.editor.destroy();
         this.editor.container.remove();
     },
     mounted: function () {
         console.log("mounted xeditor")
         const fontSize = 15
-        console.log(`fontSize=${fontSize}`)
+        // console.log(`fontSize=${fontSize}`)
 
 
-        
+        // console.log(this.value)
+
 
         var vm = this;
-        var lang = this.lang||'kotlin'; // text
-        var theme = this.theme||'monokai'; //chrome
+        var lang = this.lang || 'kotlin'; // text
+        var theme = this.theme || 'monokai'; //chrome
 
         var editor = vm.editor = ace.edit(this.$el);
         editor.$blockScrolling = Infinity;
 
-        this.$emit('init',editor);
-        
+        this.$emit('init', editor);
 
-        editor.setFontSize(fontSize) 
+
+        editor.setFontSize(fontSize)
 
         // ace.edit(document.getElementById('test'), {
-            // useWorker: false
+        // useWorker: false
         // });
 
 
         // editor.setOptions({
-            // maxLines: Infinity
+        // maxLines: Infinity
         // });
 
         editor.commands.addCommands([{
             name: "showSettingsMenu",
-            bindKey: {win: "Ctrl-q", mac: "Ctrl-q"},
-            exec: function(editor) {
+            bindKey: { win: "Ctrl-q", mac: "Ctrl-q" },
+            exec: function (editor) {
                 editor.showSettingsMenu();
             },
             readOnly: true
@@ -162,24 +165,23 @@ export default {
         // console.log(`ace keyboard handler`)
 
         editor.getSession().setUseWorker(false)
-        editor.getSession().setMode(typeof lang === 'string' ? ( 'ace/mode/' + lang ) : lang);
-        editor.setTheme('ace/theme/'+theme);
-        if(this.value) editor.setValue(this.value,1);
-        if(this.view) editor.session.setValue(this.view,1)
-        // this.contentBackup = this.value;
+        editor.getSession().setMode(typeof lang === 'string' ? ('ace/mode/' + lang) : lang);
+        editor.setTheme('ace/theme/' + theme);
+        if (this.value) editor.setValue(this.value, 1)
+        this.contentBackup = this.value;
 
         editor.on('change', () => {
-            // if(this.lock === true ) {
-                // this.lock = false
-                // return
-            // }
-            const content = editor.getValue();
-            vm.$emit('input',content);
+            var content = editor.getValue();
+            vm.$emit('input', content);
+            vm.contentBackup = content;
         });
 
+        editor.getSession().selection.on("changeCursor", () => {
+            vm.$emit('cursor', editor.selection.getCursor().row + 1)
+        })
+        vm.$emit('cursor', editor.selection.getCursor().row + 1)
 
-
-        if(vm.options)
+        if (vm.options)
             editor.setOptions(vm.options);
     }
 }

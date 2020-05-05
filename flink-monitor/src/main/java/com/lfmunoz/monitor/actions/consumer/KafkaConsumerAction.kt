@@ -23,12 +23,14 @@ class KafkaConsumerAction : ActionInterface {
   }
 
   // CONSUMER
-  private var aKafkaConfig = KafkaConfig()
-  private val isSampling= AtomicBoolean(false)
+  @get:Synchronized @set:Synchronized
+  private var aKafkaConfig = KafkaConfig(groupId = "groupId-${Random.nextInt(1000,9999)}")
+  private val isSampling = AtomicBoolean(false)
   private val messagesReceived = AtomicLong(0L)
+  private val samplingPeriod = AtomicLong(1_000L)
 
   private val job = SupervisorJob()
-  private val context = newSingleThreadContext( "kafkaConsumer")
+  private val context = newFixedThreadPoolContext(3, "kafkaConsumer")
   private val scope = CoroutineScope(context + job)
 
 
@@ -38,26 +40,20 @@ class KafkaConsumerAction : ActionInterface {
   override fun accept(wsPacket: WsPacket): Flow<String> {
     return flow<String> {
       val dto = KafkaConsumerDTO.fromJson(wsPacket.payload)
-      Log.info().log("[KafkaAction] - {}", dto)
+      Log.info().log("[KafkaConsumerAction] - {}", dto)
 
       when (dto.type) {
         KafkaConsumerType.SAMPLE -> {
           emitAll(sampling(dto).map{ mapper.writeValueAsString(it)})
         }
-        KafkaConsumerType.CANCEL -> {
-          emitAll(cancel(dto).map{ mapper.writeValueAsString(it)})
-        }
-        KafkaProducerType.CONFIG_READ -> {
+        KafkaConsumerType.CONFIG_READ -> {
           emitAll(configRead(dto).map { it.toJson() })
         }
-        KafkaProducerType.CONFIG_WRITE -> {
+        KafkaConsumerType.CONFIG_WRITE -> {
           emitAll(configWrite(dto).map { it.toJson() })
         }
-        KafkaConsumerType.STATUS -> {
-          emitAll(status(dto).map {  it.toJson() } )
-        }
         else -> {
-          emit(KafkaProducerDTO(KafkaProducerType.ERROR, "invalid action").toJson())
+          emit(KafkaConsumerDTO(KafkaConsumerType.ERROR, "[invalid type] - ${dto.type}").toJson())
         }
       } // end of when
     } // end of flow
@@ -69,19 +65,22 @@ class KafkaConsumerAction : ActionInterface {
   // ________________________________________________________________________________
   private suspend fun sampling(dto: KafkaConsumerDTO): Flow<KafkaConsumerDTO> {
     return flow {
-      if (!isSampling.get()) {
-        messagesReceived.set(0L)
-        isSampling.set(true)
-        scope.launch { startSampling() }
+      val debounce = dto.body.toLong()
+      if (!isSampling.get() && debounce > 50) {
+        emitAll(startSampling(debounce).map { KafkaConsumerDTO(dto.type, it) })
+      } else {
+        Log.info().log("[sampling already active] - debounce={}", debounce)
+        emit(KafkaConsumerDTO(dto.type, "NOK"))
       }
-      emit(KafkaConsumerDTO(dto.type, "OK"))
     }.flowOn(context)
   }
 
-  private fun startSampling() : Flow<String> {
-    Log.info().log("[KafkaAction sampling] - starting consumer")
+  private fun startSampling(debounce: Long) : Flow<String> {
+    Log.info().log("[KafkaAction sampling] - starting consumer - {}", debounce)
+    messagesReceived.set(0L)
+    isSampling.set(true)
     val flow = KafkaConsumerBare.connect(aKafkaConfig, isSampling)
-    return flow.debounce(1_00L).map {
+    return flow.sample(debounce).map {
       Log.info().log("[luis] - received message")
       messagesReceived.getAndIncrement()
       return@map mapper.readValue(it.value, MonitorMessage::class.java)
@@ -90,35 +89,20 @@ class KafkaConsumerAction : ActionInterface {
     }
   }
 
-  private suspend fun cancel(dto: KafkaConsumerDTO): Flow<KafkaConsumerDTO> {
+  private suspend fun configRead(dto: KafkaConsumerDTO): Flow<KafkaConsumerDTO> {
     return flow {
-      if (isSampling.get()) {
-        isSampling.set(false)
-      }
-      emit(KafkaConsumerDTO(dto.type, "OK"))
-    }.flowOn(context)
-  }
-
-  private suspend fun configRead(dto: KafkaConsumerDTO): Flow<KafkaProducerDTO> {
-    return flow {
-      val replyDto = KafkaProducerDTO(KafkaProducerType.CONFIG_READ, aKafkaConfig.toJson())
+      val replyDto = KafkaConsumerDTO(KafkaConsumerType.CONFIG_READ, returnConfig().toJson())
       emit(replyDto)
     }.flowOn(context)
   }
 
-  private suspend fun configWrite(dto: KafkaConsumerDTO): Flow<KafkaProducerDTO> {
+  private suspend fun configWrite(dto: KafkaConsumerDTO): Flow<KafkaConsumerDTO> {
     return flow {
-      val newKafkaConfig = KafkaConfig.fromJson(dto.body)
-      aKafkaConfig = newKafkaConfig
-      val replyDto = KafkaProducerDTO(KafkaProducerType.CONFIG_WRITE, aKafkaConfig.toJson())
-      emit(replyDto)
-    }.flowOn(context)
-  }
-
-  private suspend fun status(dto: KafkaConsumerDTO): Flow<KafkaConsumerDTO> {
-    return flow {
-      val status = KafkaConsumerStatus(isSampling = false, messagesReceived = messagesReceived.get())
-      val replyDto = KafkaConsumerDTO(KafkaConsumerType.STATUS, status.toJson())
+      val config = KafkaConsumerConfig.fromJson(dto.body)
+      aKafkaConfig = config.kafkaConfig
+      isSampling.set(false)
+      samplingPeriod.set(config.samplingPeriod)
+      val replyDto = KafkaConsumerDTO(KafkaConsumerType.CONFIG_WRITE, returnConfig().toJson())
       emit(replyDto)
     }.flowOn(context)
   }
@@ -126,13 +110,20 @@ class KafkaConsumerAction : ActionInterface {
   // ________________________________________________________________________________
   // Helper Methods
   // ________________________________________________________________________________
-
+  private fun returnConfig() : KafkaConsumerConfig{
+    return KafkaConsumerConfig(
+      isSampling = isSampling.get(),
+      messagesReceived = messagesReceived.get(),
+      samplingPeriod = samplingPeriod.get(),
+      kafkaConfig = aKafkaConfig
+    )
+  }
 
 } // EOF
 
 
 data class KafkaConsumerDTO(
-        var type: KafkaConsumerType = KafkaConsumerType.STATUS,
+        var type: KafkaConsumerType = KafkaConsumerType.CONFIG_READ,
         var body: String = ""
 ) {
   companion object {
@@ -144,19 +135,19 @@ data class KafkaConsumerDTO(
 
 enum class KafkaConsumerType(val id: Int) {
   SAMPLE(1),
-  CANCEL(2),
   CONFIG_READ(6),
   CONFIG_WRITE(7),
-  STATUS(5),
   ERROR(6)
 }
 
-data class KafkaConsumerStatus(
+data class KafkaConsumerConfig(
   var isSampling: Boolean = false,
-  var messagesReceived: Long = 0L
+  var messagesReceived: Long = 0L,
+  var samplingPeriod: Long = 1000L,
+  var kafkaConfig: KafkaConfig = KafkaConfig()
 ) {
   companion object {
-    fun fromJson(json: String) = mapper.readValue<KafkaConsumerStatus>(json)
+    fun fromJson(json: String) = mapper.readValue<KafkaConsumerConfig>(json)
   }
 
   fun toJson(): String = mapper.writeValueAsString(this)

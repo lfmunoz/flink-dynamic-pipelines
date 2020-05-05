@@ -4,6 +4,7 @@ import com.lfmunoz.monitor.actions.producer.KafkaProducerAction
 import com.lfmunoz.monitor.actions.test.TestAction
 import com.lfmunoz.flink.web.*
 import com.lfmunoz.monitor.actions.consumer.KafkaConsumerAction
+import com.lfmunoz.monitor.actions.kafkaAdmin.KafkaAdminAction
 import io.vertx.core.Handler
 import io.vertx.core.Vertx
 import io.vertx.core.VertxOptions
@@ -24,7 +25,7 @@ val myModule = module(createdAtStart = true) {
   single(named("TestAction")) { TestAction() as ActionInterface }
   single(named("KafkaProducerAction")) { KafkaProducerAction() as ActionInterface }
   single(named("KafkaConsumerAction")) { KafkaConsumerAction() as ActionInterface }
-  single(named("KafkaAdminAction")) { KafkaProducerAction() as ActionInterface }
+  single(named("KafkaAdminAction")) { KafkaAdminAction() as ActionInterface }
   single(named("ActionsMap")) {
     hashMapOf<Int, ActionInterface>(
       WsPacketType.TEST.id to get(named("TestAction")),

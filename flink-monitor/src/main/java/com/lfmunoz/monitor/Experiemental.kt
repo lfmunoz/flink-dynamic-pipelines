@@ -6,7 +6,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.script.jsr223.KotlinJsr223JvmLocalScriptEngine
 import javax.script.ScriptEngineManager
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.newSingleThreadContext
 
+
+val context = newSingleThreadContext("t0")
 
 fun mainX() {
   println("test")
@@ -34,15 +38,17 @@ fun main() {
     var i = 0
     while (true) {
       delay(1000)
-      println("Emit $i")
+      println("[${Thread.currentThread()}] Emit $i")
       emit(i++)
+    }
+  }.flowOn(context)
+
+  runBlocking {
+    flow.debounce(1000).collect {
+      println("[${Thread.currentThread()}] GOT $it")
     }
   }
 
-  runBlocking {
-    launch { flow.collect { println("A: got $it") } }
-    launch { flow.collect { println("B: got $it") } }
-  }
 }
 
 

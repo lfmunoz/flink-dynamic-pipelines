@@ -1,6 +1,8 @@
 package com.lfmunoz.monitor.actions.producer
 
 
+import com.fasterxml.jackson.module.kotlin.readValue
+import com.lfmunoz.monitor.mapper
 import java.io.Serializable
 import java.util.HashMap
 import java.util.Random
@@ -26,7 +28,8 @@ class MonitorMessageDataGenerator (nrOfUuids: Int) {
         val uuid = uuidList[r.nextInt(uuidList.size)]
         val time = System.currentTimeMillis()
 
-        // Build the element property values (note, only numeric values are provided)
+        // Build the element property values (note, only numeric values are provided)yer1
+
         val values = HashMap<String, String>()
         IntStream.rangeClosed(1, numericProperties)
                 .forEach { i -> values["property.name.goes.here.numeric$i"] = (r.nextDouble() * 100 + 50).toString() }
@@ -51,5 +54,11 @@ data class MonitorMessage(
   var informTime: Long = 0,
   var values: Map<String, String> = emptyMap(),
   var version: Int = 0
-) : Serializable
+) : Serializable {
+  companion object {
+    fun fromJson(json: String) = mapper.readValue<MonitorMessage>(json)
+  }
+
+  fun toJson(): String = mapper.writeValueAsString(this)
+}
 

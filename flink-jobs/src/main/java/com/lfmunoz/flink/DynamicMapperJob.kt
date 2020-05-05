@@ -1,88 +1,50 @@
 package com.lfmunoz.flink
 
-import com.lfmunoz.flink.flink.FlinkJobContext
-import com.lfmunoz.flink.flink.bufferToByteArray
+import com.lfmunoz.flink.engine.DynamicMapperProcessFunction
+import com.lfmunoz.flink.engine.MapperResult
+import com.lfmunoz.flink.flink.FlinkUtils
+import com.lfmunoz.flink.flink.FlinkUtils.Companion.mapper
+import com.lfmunoz.flink.flink.MapOfStringToString
 import com.lfmunoz.flink.kafka.KafkaMessage
+import com.lfmunoz.flink.kafka.kafkaSink
 import com.lfmunoz.flink.kafka.kafkaSource
-import com.lfmunoz.flink.rabbit.rabbitSink
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.runBlocking
-import org.jetbrains.kotlin.script.jsr223.KotlinJsr223JvmLocalScriptEngine
-import java.util.concurrent.ConcurrentHashMap
-import javax.script.ScriptEngineManager
+import com.lfmunoz.flink.monitor.MonitorMessage
+import org.apache.flink.api.common.state.MapStateDescriptor
+import org.apache.flink.api.common.typeinfo.BasicTypeInfo
+import org.apache.flink.api.common.typeinfo.TypeInformation
 
-// Flink Job:  Kafka --> Rabbit Bridge
-//fun dynamicMapperJob(jobCtx: FlinkJobContext) {
-//  jobCtx
+// Flink Job:  Kafka -> Mapper ->  Kafka
+fun dynamicMapperJob(jobCtx: FlinkJobContext) {
 
+  val broadcastMapperStream =  jobCtx.env.setParallelism(1)
+    .kafkaSource(jobCtx.mapperKafka)
+    .map { mapper.readValue(it.value, FlinkUtils.mapToStringOfStringType) as Map<String,String> }
+    .returns(MapOfStringToString)
+    .broadcast(mapperStateDescriptor)
 
-
-
-//  jobCtx.env.execute("[Monitor Message] Kafka to Rabbit Bridge")
-//}
-//
-
-typealias IntToInt = (Int) -> Int
-typealias DoubleToDouble = (Double) -> Double
-
-
-fun main() {
-  println("test")
-
-
-//  val engineKts = ScriptEngineManager().getEngineByExtension("kts") as KotlinJsr223JvmLocalScriptEngine
-//  val comp1 = engineKts.compile("val x = 3")
-  val mapperObjList = mutableListOf<MapperObj>()
-  mapperObjList.add( MapperObj(1L, "increment", "{ x: Int -> x + 1 }") )
-  mapperObjList.add( MapperObj(2L, "double", "{ x: Int -> x * 2 }") )
-  mapperObjList.add( MapperObj(3L, "square", "{ x: Int -> x * x }") )
-  mapperObjList.add( MapperObj(4L, "decrement", "{ x: Int -> x - 1 }") )
-
-  val start = System.currentTimeMillis()
-  val mapperConfig = MapperConfig()
-  val finish = System.currentTimeMillis()
-  println(" Application has started [${finish-start }ms]")
-
-  mapperObjList.forEach {
-    mapperConfig.insertMapper(it.uniqueId, it.script)
-  }
-
-  println(mapperConfig.evaluate(1))
-  println(mapperConfig.evaluate(2))
-  println(mapperConfig.evaluate(3))
-
+  jobCtx.env
+    .kafkaSource(jobCtx.inputKafka)
+    .map { it.value }.returns(ByteArray::class.java)
+    .map { mapper.readValue(it, MonitorMessage::class.java)}.returns(MonitorMessage::class.java)
+    .connect(broadcastMapperStream)
+    .process(DynamicMapperProcessFunction)
+    .returns(MapperResult::class.java)
+    .map {
+      val key = mapper.writeValueAsBytes(it.id)
+      val value = mapper.writeValueAsBytes(it)
+      KafkaMessage(key, value)
+    }
+    .returns(KafkaMessage::class.java)
+    .kafkaSink(jobCtx.outputKafka)
 
 }
 
-data class MapperObj(
-  var uniqueId: Long = 0L,
-  var name: String = "",
-  var script: String = ""
+//________________________________________________________________________________
+// BROADCAST MAPPER
+//________________________________________________________________________________
+val mapperStateDescriptor= MapStateDescriptor(
+  "MapperConfig",
+  BasicTypeInfo.STRING_TYPE_INFO,
+  TypeInformation.of(MapOfStringToString)
 )
 
-
-class MapperConfig {
-  private val engineKts = ScriptEngineManager().getEngineByExtension("kts")
-
-  init {
-    engineKts.eval("assert(true)")
-  }
-
-  private val mapperFunctions: ConcurrentHashMap<Long, IntToInt>  = ConcurrentHashMap()
-
-  fun insertMapper(uniqueId: Long, lambda: String) {
-    val lambdaFunc  = engineKts.eval(lambda) as IntToInt
-    mapperFunctions[uniqueId] = lambdaFunc
-  }
-  fun removeMapper(uniqueId: Long, lambda: String) {
-  }
-
-  fun evaluate(input: Int) : Map<Long, Int> {
-    return mapperFunctions.map { it.key to it.value.invoke(input) }.toMap()
-  }
-
-
-
-}

@@ -41,8 +41,10 @@ export const ConnectionLookUp = [
 //________________________________________________________________________________
 export const Action = {
     TEST: "TEST",
-    KAFKA: "KAFKA",
-    DISCONNECT: "DISCONNECT",
+    KAFKA_ADMIN: "KAFKA_ADMIN",
+    KAFKA_PRODUCER: "KAFKA_PRODUCER",
+    KAFKA_CONSUMER: "KAFKA_CONSUMER",
+    MAPPER: "MAPPER",
     AUTH: "AUTH"
 }
 

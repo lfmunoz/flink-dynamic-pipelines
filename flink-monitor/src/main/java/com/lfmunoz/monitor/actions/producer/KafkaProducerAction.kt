@@ -10,9 +10,11 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import org.fissore.slf4j.FluentLoggerFactory
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import javax.annotation.concurrent.GuardedBy
 import javax.annotation.concurrent.ThreadSafe
+import javax.management.monitor.Monitor
 import kotlin.random.Random
 
 @ThreadSafe
@@ -33,9 +35,9 @@ class KafkaProducerAction : ActionInterface {
   // PRODUCER
   // @GuardedBy access only from context
   private var aKafkaConfig = KafkaConfig()
-  private var messageRatePerSecondInt: Int = 5
   private var isProducing = AtomicBoolean(false)
   private var messagesSent = AtomicLong(0L)
+  private var messageRatePerSecondInt = AtomicInteger(1)
 
 
   // ________________________________________________________________________________
@@ -45,23 +47,15 @@ class KafkaProducerAction : ActionInterface {
     return flow<String> {
       val dto = KafkaProducerDTO.fromJson(wsPacket.payload)
       Log.info().log("[KafkaProducerAction] - {}", dto)
-
       when (dto.type) {
         KafkaProducerType.START -> {
-          emitAll(start(dto).map{ mapper.writeValueAsString(it)})
+          emitAll(produce(dto).map { it.toJson() })
         }
-        KafkaProducerType.STOP -> {
-          emitAll(stop(dto).map{ mapper.writeValueAsString(it)})
-        }
-
         KafkaProducerType.CONFIG_READ -> {
           emitAll(configRead(dto).map { it.toJson() })
         }
         KafkaProducerType.CONFIG_WRITE -> {
           emitAll(configWrite(dto).map { it.toJson() })
-        }
-        KafkaProducerType.STATUS -> {
-          emitAll(status(dto).map {  it.toJson() } )
         }
         else -> {
           emit(KafkaProducerDTO(KafkaProducerType.ERROR, "invalid action").toJson())
@@ -74,23 +68,32 @@ class KafkaProducerAction : ActionInterface {
   // ________________________________________________________________________________
   // COMMANDS
   // ________________________________________________________________________________
-  private suspend fun start(dto: KafkaProducerDTO): Flow<KafkaProducerDTO> {
+  private suspend fun produce(dto: KafkaProducerDTO) : Flow<KafkaProducerDTO> {
     return flow {
       if (!isProducing.get()) {
         messagesSent.set(0L)
         isProducing.set(true)
-        scope.launch {
-          startProducer()
-        }
+        emitAll(startProducer().map {
+          return@map when(it) {
+            is KafkaPublisherResult.Published -> {
+              val value = mapper.readValue<MonitorMessage>(it.kafkaMessage.value)
+              KafkaProducerDTO(type = KafkaProducerType.START, body = value.toJson())
+            }
+            else -> {
+              KafkaProducerDTO(type = KafkaProducerType.START, body = mapper.writeValueAsString(it))
+
+            }
+
+          }
+        })
       }
-      emit(KafkaProducerDTO(dto.type, "OK"))
-    }.flowOn(context)
+    }
   }
 
-  private suspend fun startProducer() {
-    val publishDelay = rateToDelayInMillis(messageRatePerSecondInt)
+  private suspend fun startProducer() : Flow<KafkaPublisherResult> {
+    val publishDelay = rateToDelayInMillis(messageRatePerSecondInt.get())
     Log.info().log("[KafkaAction start] - starting publishing rate={}", messageRatePerSecondInt)
-    KafkaPublisherBare.connect(aKafkaConfig, flow {
+    return KafkaPublisherBare.connect(aKafkaConfig, flow{
       while (isProducing.get()) {
         val aMonitorMessage = aMonitorMessageDataGenerator.random(20)
         val key = aMonitorMessage.id.toByteArray()
@@ -100,49 +103,42 @@ class KafkaProducerAction : ActionInterface {
         emit(KafkaMessage(key, value))
       }
     })
-    Log.info().log("[KafkaAction start] - ending publishing")
-  }
 
-  private suspend fun stop(dto: KafkaProducerDTO): Flow<KafkaProducerDTO> {
-    return flow {
-      if (isProducing.get()) {
-        isProducing.set(false)
-      }
-      emit(KafkaProducerDTO(dto.type, "OK"))
-    }.flowOn(context)
   }
 
   private suspend fun configRead(dto: KafkaProducerDTO): Flow<KafkaProducerDTO> {
     return flow {
-      val replyDto = KafkaProducerDTO(KafkaProducerType.CONFIG_READ, aKafkaConfig.toJson())
+      val replyDto = KafkaProducerDTO(KafkaProducerType.CONFIG_READ, returnConfig().toJson())
       emit(replyDto)
     }.flowOn(context)
   }
 
   private suspend fun configWrite(dto: KafkaProducerDTO): Flow<KafkaProducerDTO> {
     return flow {
-      val newKafkaConfig = KafkaConfig.fromJson(dto.body)
-      aKafkaConfig = newKafkaConfig
-      messageRatePerSecondInt = aKafkaConfig.value
-      val replyDto = KafkaProducerDTO(KafkaProducerType.CONFIG_WRITE, aKafkaConfig.toJson())
+      val config = KafkaProducerConfig.fromJson(dto.body)
+      aKafkaConfig = config.kafkaConfig
+      isProducing.set(false)
+      messageRatePerSecondInt.set(config.messageRatePerSecondInt)
+      val replyDto = KafkaProducerDTO(KafkaProducerType.CONFIG_WRITE, returnConfig().toJson())
       emit(replyDto)
     }.flowOn(context)
   }
 
-  private suspend fun status(dto: KafkaProducerDTO): Flow<KafkaProducerDTO> {
-    return flow {
-      val status = KafkaProducerStatus(isProducing = false,
-        messagesSent = messagesSent.get(), messageRatePerSecondInt = messageRatePerSecondInt)
-      val replyDto = KafkaProducerDTO(KafkaProducerType.STATUS, status.toJson())
-      emit(replyDto)
-    }.flowOn(context)
-  }
 
   // ________________________________________________________________________________
   // Helper Methods
   // ________________________________________________________________________________
   private fun rateToDelayInMillis(rate: Int): Long {
     return (1000 / rate).toLong()
+  }
+
+  private fun returnConfig() : KafkaProducerConfig{
+    return KafkaProducerConfig(
+      isProducing = isProducing.get(),
+      messagesSent = messagesSent.get(),
+      messageRatePerSecondInt = messageRatePerSecondInt.get(),
+      kafkaConfig = aKafkaConfig
+    )
   }
 
 } // EOF
@@ -152,7 +148,7 @@ class KafkaProducerAction : ActionInterface {
 // DTO
 //________________________________________________________________________________
 data class KafkaProducerDTO(
-  var type: KafkaProducerType = KafkaProducerType.STATUS,
+  var type: KafkaProducerType = KafkaProducerType.CONFIG_READ,
   var body: String = ""
 ) {
   companion object {
@@ -167,8 +163,6 @@ data class KafkaProducerDTO(
 //________________________________________________________________________________
 enum class KafkaProducerType(val id: Int) {
   START(1),
-  STOP(2),
-  STATUS(5),
   CONFIG_READ(6),
   CONFIG_WRITE(7),
   ERROR(31)
@@ -177,13 +171,14 @@ enum class KafkaProducerType(val id: Int) {
 //________________________________________________________________________________
 // DTO STATUS
 //________________________________________________________________________________
-data class KafkaProducerStatus(
+data class KafkaProducerConfig(
   var isProducing: Boolean = false,
   var messagesSent: Long = 0L,
-  var messageRatePerSecondInt: Int = 0
+  var messageRatePerSecondInt: Int = 1,
+  var kafkaConfig: KafkaConfig = KafkaConfig()
 ) {
   companion object {
-    fun fromJson(json: String) = mapper.readValue<KafkaProducerStatus>(json)
+    fun fromJson(json: String) = mapper.readValue<KafkaProducerConfig>(json)
   }
 
   fun toJson(): String = mapper.writeValueAsString(this)

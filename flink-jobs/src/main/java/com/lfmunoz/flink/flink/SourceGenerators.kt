@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
 //________________________________________________________________________________
-// GENERATORS
+// Int GENERATOR
 //________________________________________________________________________________
 class FlinkIntGenerator(
         private val maxGenerationCount: Long = 0L,
@@ -43,6 +43,9 @@ class FlinkIntGenerator(
 }
 
 
+//________________________________________________________________________________
+// MonitorMessage GENERATOR
+//________________________________________________________________________________
 class FlinkMonitorMessageGenerator(
         private val maxGenerationCount: Long = 0L,
         private val generationIntervalMillis: Long = 1000L
@@ -58,7 +61,6 @@ class FlinkMonitorMessageGenerator(
         while(stopCondition()) {
             Thread.sleep(generationIntervalMillis)
             val aMonitorMessage = aMonitorMessageDataGenerator.random(20)
-//            ctx.collect(mapper.writeValueAsBytes(aMonitorMessage))
             ctx.collect(aMonitorMessage)
         }
         log.info("[done generating messages]")
@@ -77,60 +79,3 @@ class FlinkMonitorMessageGenerator(
         }
     }
 }
-
-
-
-/*
-class FlinkMonitorMessageGenerator(
-        private val maxGenerationCount: Long = 0L,
-        private val generationIntervalMillis: Long = 1000L
-) : RichParallelSourceFunction<ByteArray>() {
-
-    private val log = LoggerFactory.getLogger(FlinkMonitorMessageGenerator::class.java)
-
-    @Volatile private var isRunning = true
-    private val count: AtomicLong = AtomicLong(0L)
-
-    override fun run(ctx: SourceFunction.SourceContext<ByteArray>) {
-        val aMonitorMessageDataGenerator = MonitorMessageDataGenerator(10)
-        while(stopCondition()) {
-            Thread.sleep(generationIntervalMillis)
-            val aMonitorMessage = aMonitorMessageDataGenerator.random(true, 30, 30)
-            ctx.collect(mapper.writeValueAsBytes(aMonitorMessage))
-        }
-        log.info("[done generating messages]")
-    }
-
-    override fun cancel() {
-        isRunning = false
-    }
-
-    private fun stopCondition() : Boolean {
-        return if(maxGenerationCount == 0L) {
-            isRunning
-        } else {
-            count.incrementAndGet()
-            isRunning && count.get() <= maxGenerationCount
-        }
-    }
-}
-*/
-
-//________________________________________________________________________________
-// MISC
-//________________________________________________________________________________
-fun <T> take(
-        count: Long = 100L
-) : RichMapFunction<T, T> {
-    return object: RichMapFunction<T, T>() {
-        val numberOfSeenValues: AtomicLong = AtomicLong(0)
-        override fun map(value: T): T {
-            if(numberOfSeenValues.incrementAndGet() > count) {
-                throw RuntimeException("[take completed ] - Took ${numberOfSeenValues.get()}")
-            }
-            println(numberOfSeenValues.get())
-            return value
-        }
-    }
-}
-

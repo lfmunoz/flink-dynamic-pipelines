@@ -1,14 +1,12 @@
-package com.lfmunoz.monitor.kafka
+package com.lfmunoz.monitor.actions.producer
 
 import ch.qos.logback.classic.Level
-import com.lfmunoz.monitor.actions.producer.KafkaActionDTO
-import com.lfmunoz.monitor.actions.producer.KafkaActionStatus
-import com.lfmunoz.monitor.actions.producer.KafkaActionType
-import com.lfmunoz.monitor.actions.producer.KafkaProducerAction
 import com.lfmunoz.monitor.changeLogLevel
 import com.lfmunoz.flink.web.WsPacket
 import com.lfmunoz.flink.web.WsPacketCode
 import com.lfmunoz.flink.web.WsPacketType
+import com.lfmunoz.monitor.actions.consumer.KafkaConsumerDTO
+import com.lfmunoz.monitor.actions.producer.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import org.assertj.core.api.Assertions.assertThat
@@ -18,7 +16,9 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.TestInstance
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.random.Random
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class KafkaProducerActionIntTest {
@@ -44,51 +44,44 @@ class KafkaProducerActionIntTest {
   // TESTS
   //________________________________________________________________________________
   @Test
-  fun status() {
+  fun `READ CONFIG`() {
     val action = KafkaProducerAction()
     runBlocking {
-      val flow = action.accept(statusWsPacket()).toList()
-      assertThat(flow.size).isEqualTo(1)
+      val resp = action.accept(configReadPkt()).toList()
+      assertThat(resp.size).isEqualTo(1)
     }
-
   }
 
   @Test
   fun `start and stop producer`() {
+    val atomic = AtomicInteger(0)
     val action = KafkaProducerAction()
-    val startMessage = KafkaActionDTO(type = KafkaActionType.START)
-    val stopMessage = KafkaActionDTO(type = KafkaActionType.STOP)
-    val statusMessage = KafkaActionDTO(type = KafkaActionType.STATUS)
-    runBlocking {
-      // START
-      val startStatus = action.accept(buildWsPacket(startMessage.toJson())).map {
-        return@map KafkaActionStatus.fromJson(KafkaActionDTO.fromJson(it).body)
-      }.toList().first()
-      assertThat(startStatus.isProducing).isTrue()
-    }
-
-    // STATUS
-    await.timeout(8, TimeUnit.SECONDS).pollInterval(1, TimeUnit.SECONDS).untilAsserted {
-      runBlocking {
-        val status = action.accept(buildWsPacket(statusMessage.toJson())).map {
-          return@map KafkaActionStatus.fromJson(KafkaActionDTO.fromJson(it).body)
-        }.toList().first()
-        assertThat(status.isProducing).isTrue()
-        assertThat(status.messagesSent).isGreaterThan(0L)
-      }
+    val producerJob  = GlobalScope.launch {
+    // START
+      val startStatus = action.accept(startPkt()).map {
+        atomic.getAndIncrement()
+        println(it)
+        it
+      }.toList()
+      assertThat(startStatus.size).isGreaterThanOrEqualTo(1)
     }
 
     // STOP
+    val configStop = KafkaProducerConfig( isProducing = false)
     await.timeout(8, TimeUnit.SECONDS).pollInterval(1, TimeUnit.SECONDS).untilAsserted {
       runBlocking {
-        val stopFlow = action.accept(buildWsPacket(stopMessage.toJson())).map {
-          return@map KafkaActionStatus.fromJson(KafkaActionDTO.fromJson(it).body)
-        }.toList().first()
-        assertThat(stopFlow.isProducing).isFalse()
+        delay(1000)
+        val stopStatus =  action.accept(configWritePkt(configStop)).map {
+          println(it)
+          it
+        }.toList()
+        assertThat(stopStatus.size).isGreaterThanOrEqualTo(1)
       }
     }
-
   }
+
+
+  /*
 
   @Test
   fun `start and stop sampler`() {
@@ -114,25 +107,9 @@ class KafkaProducerActionIntTest {
       assertThat(cancelStatus.messagesReceived).isGreaterThan(0L)
 
     }
-  }
+  }\
 
-  //________________________________________________________________________________
-  // HELPER METHODS
-  //  ________________________________________________________________________________
-  private fun statusWsPacket(): WsPacket {
-    val message = KafkaActionDTO(
-            type = KafkaActionType.STATUS
-    )
-    return buildWsPacket(message.toJson())
-  }
+   */
 
-  private fun buildWsPacket(payload: String): WsPacket {
-    return WsPacket(
-      action = WsPacketType.KAFKA,
-      payload = payload,
-      id = 10,
-      code = WsPacketCode.REQ
-    )
-  }
 
 }

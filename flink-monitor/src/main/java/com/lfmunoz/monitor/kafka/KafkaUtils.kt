@@ -11,8 +11,7 @@ data class KafkaConfig(
   var topic: String = "default-topic",
   var groupId: String = "default-groupId",
   var compression: String = "none", // none, lz4
-  var offset: String ="earliest", // latest, earliest, none(use zookeper)
-  var value: Int = 0
+  var offset: String = "none" // latest, earliest, none(use zookeper)
 ) : java.io.Serializable {
   companion object {
     fun fromJson(json: String) = mapper.readValue<KafkaConfig>(json)

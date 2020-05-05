@@ -1,7 +1,6 @@
 package com.lfmunoz.flink
 
 import com.lfmunoz.flink.flink.FlinkIntGenerator
-import com.lfmunoz.flink.flink.parseParameters
 import org.apache.flink.api.common.state.MapStateDescriptor
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo
 import org.apache.flink.streaming.api.functions.co.BroadcastProcessFunction

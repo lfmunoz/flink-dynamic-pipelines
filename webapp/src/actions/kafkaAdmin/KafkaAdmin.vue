@@ -2,54 +2,40 @@
 <!-- TEMPLATE-->
 <!-- ________________________________________________________________________________ -->
 <template>
-  <div class="test">
-    <h1>TestAction</h1>
-    <!-- <z-command /> -->
-
-
-    <KafkaAdmin />
-
-
-      <x-three-column>
-          <template v-slot:left>
-    <KafkaProducer />
-
-          </template>
-          <template v-slot:middle>
-          <div class="test">
-            <mapper/>
-            <!-- <x-key-value /> -->
-          </div>
-          </template>
-            <template v-slot:right>
-    <KafkaConsumer />
-            </template>
-      </x-three-column>
-
-  </div>
+  <aside>
+    <h1>Kafka Admin</h1>
+    <div class="status">
+      <button @click="topics">TOPICS</button>
+      <button @click="consumers">CONSUMERS</button>
+      <button @click="clear">CLEAR</button>
+      <x-label label="Lasted Updated" :value="lastUpdated" />
+      <x-ace-editor height="200" v-model="stdin" />
+    </div>
+  </aside>
 </template>
 
 <!-- ________________________________________________________________________________ --> 
 <!-- SCRIPT -->
 <!-- ________________________________________________________________________________ -->
 <script>
+// import zCommand from "@/test/components/zCommand.vue"
+// import zKafkaGenerator from "@/test/components/zKafkaGenerator.vue"
+// import xKeyValue from "@/test/components/xKeyValue.vue"
+import {
+  buildTopicsKafkaAdminPkt,
+  buildConsumersKafkaAdminPkt
+} from "@/actions/kafkaAdmin/KafkaAdminUtils.js";
 
-import KafkaProducer from "@/actions/kafkaProducer/KafkaProducer.vue"
-import KafkaConsumer from "@/actions/kafkaConsumer/KafkaConsumer.vue"
-import KafkaAdmin from "@/actions/kafkaAdmin/KafkaAdmin.vue"
-import Mapper from "@/actions/mapper/Mapper.vue"
+import { Code } from "@/websocket/ClientUtils.js";
 
 //--------------------------------------------------------------------------------------
 // Default
 //--------------------------------------------------------------------------------------
 export default {
   name: "test",
-  components: { 
+  components: {
     // zCommand,
-    KafkaAdmin,
-    Mapper,
-    KafkaConsumer,
-    KafkaProducer,
+    // zKafkaGenerator,
     // xKeyValue
   },
   //--------------------------------------------------------------------------------------
@@ -57,14 +43,50 @@ export default {
   //--------------------------------------------------------------------------------------
   data: function() {
     return {
-        statusUpdated: Date.now(),
-          statusObj: {},
+      lastUpdated: Date.now(),
+      stdin: ""
     };
   },
   //--------------------------------------------------------------------------------------
   // METHODS
   //--------------------------------------------------------------------------------------
-  methods: { },
+  methods: {
+
+    clear() {
+      this.stdin = ""
+    },
+
+    async topics() {
+      this.clear()
+      const aWsPacket = buildTopicsKafkaAdminPkt();
+      const obs$ = await this.$store.dispatch(
+        "websocket/sendAndGetObservable",
+        aWsPacket
+      );
+      obs$.subscribe(resp => {
+        if (resp.code === Code.ACK) {
+          const payload = JSON.parse(resp.payload);
+          this.stdin = `${this.stdin}\n${payload.body}`
+        }
+      });
+    },
+
+    async consumers() {
+      this.clear()
+      const aWsPacket = buildConsumersKafkaAdminPkt();
+      const obs$ = await this.$store.dispatch(
+        "websocket/sendAndGetObservable",
+        aWsPacket
+      );
+      obs$.subscribe(resp => {
+        if (resp.code === Code.ACK) {
+          const payload = JSON.parse(resp.payload);
+          this.stdin = `${this.stdin}\n${payload.body}`
+        }
+      });
+    },
+
+  },
   //--------------------------------------------------------------------------------------
   // COMPUTED
   //--------------------------------------------------------------------------------------
@@ -79,14 +101,9 @@ export default {
 <!-- ________________________________________________________________________________ --> 
 <!-- STYLE -->
 <!-- ________________________________________________________________________________ -->
-<style>
-.test {
-  border: 1px solid black;
+<style scoped>
+aside {
+  border: 5px solid black;
+   padding: 10px;
 }
-
-.status {
-  border: 1px solid green;
-  margin: 10px;
-}
-
 </style>

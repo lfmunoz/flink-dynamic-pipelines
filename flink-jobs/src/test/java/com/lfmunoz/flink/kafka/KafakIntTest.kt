@@ -9,10 +9,7 @@ import org.junit.ClassRule
 import java.util.ArrayList
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import com.lfmunoz.flink.flink.FlinkUtils.Companion.mapper
-import com.lfmunoz.flink.flink.parseParameters
-import com.lfmunoz.flink.kafka.KafkaConfig
-import com.lfmunoz.flink.kafka.KafkaMessage
-import com.lfmunoz.flink.kafka.kafkaSource
+import com.lfmunoz.flink.parseParameters
 import org.awaitility.kotlin.await
 
 
@@ -49,52 +46,7 @@ class KafkaIntTest {
         val messageTotal = 100L
         val args = arrayOf("--remote", "false")
         val aFlinkJobContext = parseParameters(args)
-        val aKafkaConfig = KafkaConfig(
-                bootstrapServer,
-                "kafka-test"
-        )
-
-        Thread() {
-            // RABBIT WRITE
-            aFlinkJobContext.env.setParallelism(1)
-                    .addSource(FlinkIntGenerator(messageTotal, 10L), "GradeGenerator")
-                    .map {
-                        val valueAndKey = mapper.writeValueAsBytes(it)
-                        return@map KafkaMessage(valueAndKey, valueAndKey)
-                    }.returns(KafkaMessage::class.java)
-                    .kafkaSink(aKafkaConfig)
-
-            // RABBIT READ
-            aFlinkJobContext.env.setParallelism(1)
-                    .kafkaSource(aKafkaConfig)
-                    .map {
-                        val value = mapper.readValue(it.value, Int::class.java)
-                        return@map value.toString().toLong()
-                    }.returns(Long::class.java)
-                    .addSink(CollectSink())
-
-            aFlinkJobContext.env.execute()
-        }.start()
-        await.untilAsserted {
-            assertThat(CollectSink.values.size).isEqualTo(messageTotal)
-        }
-    }
-
-    //________________________________________________________________________________
-    // Helper methods
-    //________________________________________________________________________________
-    // create a testing sink
-    private class CollectSink : SinkFunction<Long> {
-        @Synchronized
-        @Throws(Exception::class)
-        override fun invoke(value: Long) {
-            values.add(value)
-        }
-
-        companion object {
-            // must be static
-            val values: MutableList<Long> = ArrayList()
-        }
+        val aKafkaConfig = KafkaConfig( bootstrapServer, "kafka-test" )
     }
 
 } // EOF

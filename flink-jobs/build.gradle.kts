@@ -34,11 +34,13 @@ val artifactID = "flink-jobs"
 //________________________________________________________________________________
 dependencies {
   //    implementation project(':flink-shared')
+  // MISC
+  implementation("org.fissore:slf4j-fluent:0.12.0")
+  implementation("com.google.guava:guava:$guavaVersion")
   // JSON
   implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
   implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
   implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8:$jacksonVersion")
-  implementation("com.google.guava:guava:$guavaVersion")
   // FLINK
   implementation("org.apache.flink:flink-connector-kafka_${flinkScalaRuntime}:${flinkVersion}")
   implementation("org.apache.flink:flink-streaming-java_${flinkScalaRuntime}:${flinkVersion}")
@@ -65,9 +67,6 @@ dependencies {
   testImplementation("org.awaitility:awaitility:2.0.0")
   testImplementation("org.awaitility:awaitility-kotlin:4.0.1")
 }
-
-
-
 
 
 tasks {

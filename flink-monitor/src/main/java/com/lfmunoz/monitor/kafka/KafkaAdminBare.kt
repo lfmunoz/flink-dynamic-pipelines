@@ -1,6 +1,7 @@
 package com.lfmunoz.monitor.kafka
 
 import com.lfmunoz.monitor.BashService
+import com.lfmunoz.monitor.CmdResult
 import kotlinx.coroutines.flow.toList
 import org.I0Itec.zkclient.ZkClient
 import org.apache.kafka.clients.admin.AdminClient
@@ -30,30 +31,29 @@ class KafkaAdminBash(
   private val bootstrapServer = "kafkaNet:9092"
   private val commandPrefix =  "docker exec kafka-12345678 bin/"
 
-  suspend fun listTopics() : List<String> {
+  suspend fun listTopics() : List<CmdResult> {
     val command = "kafka-topics.sh  --zookeeper $zookeeperUrl --list"
-    return bash.runCmd("${commandPrefix}${command}").toList().map { it.toString() }
+    return bash.runCmd("${commandPrefix}${command}").toList()
   }
-  suspend fun describeTopic(topicName: String) : List<String> {
+  suspend fun describeTopic(topicName: String) : List<CmdResult> {
     val command = "kafka-topics.sh  --zookeeper $zookeeperUrl --describe --topic $topicName"
-    return bash.runCmd("${commandPrefix}${command}").toList().map { it.toString() }
+    return bash.runCmd("${commandPrefix}${command}").toList()
   }
 
-  suspend fun listConsumerGroups() : List<String> {
+  suspend fun listConsumerGroups() : List<CmdResult> {
     val command = "kafka-consumer-groups.sh  --bootstrap-server $bootstrapServer --list"
-    return bash.runCmd("${commandPrefix}${command}").toList().map { it.toString() }
+    return bash.runCmd("${commandPrefix}${command}").toList()
   }
 
-  suspend fun describeConsumerGroup(groupId: String) :List<String> {
+  suspend fun describeConsumerGroup(groupId: String) :List<CmdResult> {
     val command = "kafka-consumer-groups.sh  --bootstrap-server $bootstrapServer --describe --group $groupId"
-    return bash.runCmd("${commandPrefix}${command}").toList().map { it.toString() }
+    return bash.runCmd("${commandPrefix}${command}").toList()
   }
 
-  suspend fun diskUsage(topicName: String) :List<String> {
+  suspend fun diskUsage(topicName: String) :List<CmdResult> {
     val command = "kafka-log-dirs.sh --bootstrap-server $bootstrapServer --describe  --topic-list $topicName"
-    return bash.runCmd("${commandPrefix}${command}").toList().map { it.toString() }
+    return bash.runCmd("${commandPrefix}${command}").toList()
   }
-
 
 }
 

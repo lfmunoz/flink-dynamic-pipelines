@@ -21,7 +21,7 @@ class KafkaConsumerBare {
       // NOT thread-safe -  All network I/O happens in the thread of the application making the call.
       //  More consumers means more TCP connections to the cluster (one per thread).
       log.info().log("[kafka consumer connecting] - {}", aKafkaConfig)
-      val aKafkaConsumer = KafkaConsumer<ByteArray, ByteArray>(producerProps(aKafkaConfig))
+      val aKafkaConsumer = KafkaConsumer<ByteArray, ByteArray>(props(aKafkaConfig))
       aKafkaConsumer.subscribe(listOf(aKafkaConfig.topic))
       return consumerFlow(aKafkaConsumer, isLooping)
     }
@@ -68,14 +68,14 @@ class KafkaConsumerBare {
       }
     }
 
-    private fun producerProps(kafkaConfig: KafkaConfig): Properties {
+    private fun props(kafkaConfig: KafkaConfig): Properties {
       val deserializer = ByteArrayDeserializer::class.java.canonicalName
       val props = Properties()
       props.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.bootstrapServer)
       props.setProperty(ConsumerConfig.GROUP_ID_CONFIG, kafkaConfig.groupId)
       props.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, deserializer)
       props.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, deserializer)
-      props.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, kafkaConfig.offset)
+//      props.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, kafkaConfig.offset)
       return props
     }
 

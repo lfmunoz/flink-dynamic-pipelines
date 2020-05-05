@@ -7,13 +7,11 @@ import com.lfmunoz.monitor.actions.producer.MonitorMessageDataGenerator
 import com.lfmunoz.flink.web.ActionInterface
 import com.lfmunoz.flink.web.WsPacket
 import com.lfmunoz.monitor.BashService
+import com.lfmunoz.monitor.CmdResult
 import com.lfmunoz.monitor.kafka.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import org.fissore.slf4j.FluentLoggerFactory
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicLong
-import kotlin.random.Random
 
 class KafkaAdminAction : ActionInterface {
 
@@ -25,52 +23,58 @@ class KafkaAdminAction : ActionInterface {
   private val aKafkaAdminBare = KafkaAdminBash(bash)
 
   private val job = SupervisorJob()
-  private val context = newSingleThreadContext( "kafkaAction")
+  private val context = newSingleThreadContext("kafkaAction")
   private val scope = CoroutineScope(context + job)
 
   // ________________________________________________________________________________
   // accept()
   // ________________________________________________________________________________
-  override fun accept(wsPacket: WsPacket): Flow<String> {
-    return flow<String> {
-      val dto = KafkaAdminDTO.fromJson(wsPacket.payload)
-      Log.info().log("[KafkaAdminAction] - {}", dto)
-
-      when (dto.type) {
-        KafkaAdminActionType.TOPICS -> {
-            emitAll(topics(dto).map{ mapper.writeValueAsString(it)})
-        }
-        KafkaAdminActionType.CONSUMERS -> {
-          emitAll(consumers(dto).map{ mapper.writeValueAsString(it)})
-        }
-      } // end of when
-    } // end of flow
-  } // end of accept
-
-
-  private suspend fun topics(dto: KafkaAdminDTO) : Flow<KafkaAdminDTO> {
-    return flow {
-      val list = aKafkaAdminBare.listTopics()
-      val replyDto = KafkaAdminDTO(dto.type, mapper.writeValueAsString(list))
-      emit(replyDto)
-    }.flowOn(context)
+  override fun accept(wsPacket: WsPacket): Flow<String> = flow {
+    val dto = KafkaAdminDTO.fromJson(wsPacket.payload)
+    Log.info().log("[KafkaAdminAction] - {}", dto)
+    when (dto.type) {
+      KafkaAdminActionType.TOPICS -> emitAll(topics(dto).map { it.toJson() })
+      KafkaAdminActionType.CONSUMERS -> emitAll(consumers(dto).map { it.toJson() })
+    }
   }
-
-  private suspend fun consumers(dto: KafkaAdminDTO) : Flow<KafkaAdminDTO> {
-    return flow {
-      val list = aKafkaAdminBare.listConsumerGroups()
-      val replyDto = KafkaAdminDTO(dto.type, mapper.writeValueAsString(list))
-      emit(replyDto)
-    }.flowOn(context)
-  }
-
-
 
   // ________________________________________________________________________________
-// Helper Methods
-// ________________________________________________________________________________
+  // PRIVATE
+  // ________________________________________________________________________________
+  private suspend fun topics(dto: KafkaAdminDTO): Flow<KafkaAdminDTO> = flow {
+    aKafkaAdminBare.listTopics().forEach {
+      when (it) {
+        is CmdResult.Stdout ->  {
+          dtoEmitter(it, ::emit)
+          aKafkaAdminBare.describeTopic(it.line).forEach {dtoEmitter(it, ::emit) }
+          aKafkaAdminBare.diskUsage(it.line).forEach {dtoEmitter(it, ::emit) }
+        }
+        is CmdResult.Success -> emit(KafkaAdminDTO(KafkaAdminActionType.RESP_SUCCESS, ""))
+        else -> emit(KafkaAdminDTO(KafkaAdminActionType.RESP_FAILURE, "$it"))
+      }
+    }
+  }.flowOn(context)
 
+  private suspend fun consumers(dto: KafkaAdminDTO): Flow<KafkaAdminDTO> = flow {
+    aKafkaAdminBare.listConsumerGroups().forEach {
+      when (it) {
+        is CmdResult.Stdout ->  {
+          emit(KafkaAdminDTO(KafkaAdminActionType.RESP_STDOUT, it.line))
+          aKafkaAdminBare.describeConsumerGroup(it.line).forEach {dtoEmitter(it, ::emit) }
+        }
+        is CmdResult.Success -> emit(KafkaAdminDTO(KafkaAdminActionType.RESP_SUCCESS, ""))
+        else -> emit(KafkaAdminDTO(KafkaAdminActionType.RESP_FAILURE, "$it"))
+      }
+    }
+  }.flowOn(context)
 
+  private suspend fun dtoEmitter(aCmdResult: CmdResult, emit: suspend (KafkaAdminDTO) -> Unit) {
+    when (aCmdResult) {
+      is CmdResult.Stdout ->   emit(KafkaAdminDTO(KafkaAdminActionType.RESP_STDOUT, aCmdResult.line))
+      is CmdResult.Success -> emit(KafkaAdminDTO(KafkaAdminActionType.RESP_SUCCESS, ""))
+      else -> emit(KafkaAdminDTO(KafkaAdminActionType.RESP_FAILURE, "$aCmdResult"))
+    }
+  }
 
 } // EOF
 
@@ -90,5 +94,10 @@ data class KafkaAdminDTO(
 
 enum class KafkaAdminActionType(val id: Int) {
   TOPICS(1),
-  CONSUMERS(2)
+  CONSUMERS(2),
+
+  RESP_STDOUT(3),
+  RESP_SUCCESS(4),
+  RESP_FAILURE(5)
+
 }
