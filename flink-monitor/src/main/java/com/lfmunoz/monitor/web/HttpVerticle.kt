@@ -19,7 +19,7 @@ class HttpVerticle(private val aAppConfig: AppConfig) : CoroutineVerticle() {
   }
 
   lateinit var eb : EventBus
-  private val indexHtml = readTextFile("index.html")
+  private val indexHtml = readTextFile("<!doctype html>\n\n<html lang=\"en\">\n\n<head>\n  <meta charset=\"utf-8\">\n\n  <title>Flink Pipeline</title>\n  <meta name=\"description\" content=\"flink pipeline\">\n  <meta name=\"author\" content=\"lfm\">\n\n  <style type=\"text/css\"> </style>\n</head>\n\n<body>\n<!-- START OF APP -->\n<div id=\"app\">\n  <div class=\"main\">\n    <h1>Flink Pipeline</h1>\n  </div>\n</div>\n<!-- END OF APP -->\n\n</body>\n\n</html>\n")
 
   override suspend fun start() {
     LOG.info().log("[HTTP LISTENING] - port={}", aAppConfig.httpPort)

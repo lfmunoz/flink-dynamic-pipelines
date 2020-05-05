@@ -21,6 +21,44 @@ default:
 	@echo ${USER_ID}
 	@echo ${RND}
 
+
+#________________________________________________________________________________
+# DEVELOPMENT
+#________________________________________________________________________________
+.PHONY: unit now dev clean package
+
+clean:
+	./gradlew clean
+
+run:
+	./gradlew run
+
+unit:
+	./gradlew test --tests *UnitTest*
+
+int:
+	./gradlew test --tests *IntTest*
+
+test:
+	./gradlew test
+
+
+
+#________________________________________________________________________________
+# PRODUCTION
+#________________________________________________________________________________
+frontend:
+	@echo "frontend"
+	cd webapp ; npm install
+	cd webapp ; npm run build
+	rm -rf flink-monitor/src/main/resources/static/*
+	cp -r webapp/dist/* flink-monitor/src/main/resources/static
+
+
+package:
+	./gradlew assemble -x test -Pprod -PVERSION=${VERSION} --no-daemon
+
+
 #________________________________________________________________________________
 # Docker Start
 #________________________________________________________________________________

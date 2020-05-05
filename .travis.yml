@@ -19,8 +19,7 @@ before_install:
 
 
 script:
-  - cd webapp; make build
-  - ./gradlew clean
+  - make
   - ./gradlew build
 
 #deploy:
