@@ -10,9 +10,6 @@ services:
 # see https://blog.travis-ci.com/2014-12-17-faster-builds-with-container-based-infrastructure
 sudo: false
 
-install:
-  - true
-
 # cache the build tool's caches
 cache:
   directories:
@@ -22,12 +19,16 @@ cache:
 
 before_install:
   - chmod +x gradlew
+  -
+install:
+  - true
 
 before_script:
   - make
   - make docker-start
 
 script:
+  - make test-ci
   - make frontend
   - make package
 

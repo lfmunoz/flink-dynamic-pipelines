@@ -46,7 +46,7 @@ test:
 	./gradlew test
 
 test-ci:
-	./gradlew test
+	./gradlew test -PJenkins
 
 docker-test:
 	docker run --rm -it --name test-${RND} --network ${NETWORK} \
