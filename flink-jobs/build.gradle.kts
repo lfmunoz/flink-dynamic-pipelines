@@ -77,13 +77,14 @@ dependencies {
 
 tasks {
 
-  // setup the environment, for jenkins
-  if (project.hasProperty("jenkins")) {
-//    systemProperties = [
-//      'jenkins'           : true,
-//    'ampq'              : "amqp://guest:guest@rabbitNet:5672",
-//    'bootstrapServer'   : "kafkaNet:9092",
-//    ]
+  test {
+    if (project.hasProperty("jenkins")) {
+      systemProperty("bootstrapServer", "kafkaNet:9092")
+    }
+    useJUnitPlatform()
+    testLogging {
+      events("passed", "skipped", "failed")
+    }
   }
 
   withType<Jar> {
@@ -92,21 +93,8 @@ tasks {
     }
   }
 
-//  withType<KotlinCompile> {
-//    kotlinOptions.jvmTarget = "1.8"
-//  }
-
-  withType<Test> {
-    testLogging {
-      events("passed", "skipped", "failed")
-      exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
-      showExceptions = true
-      showCauses = true
-      showStackTraces = true
-      showStandardStreams = false
-      showStandardStreams = true
-    }
-    useJUnitPlatform()
+  withType<KotlinCompile> {
+    kotlinOptions.jvmTarget = "1.8"
   }
 
 }
