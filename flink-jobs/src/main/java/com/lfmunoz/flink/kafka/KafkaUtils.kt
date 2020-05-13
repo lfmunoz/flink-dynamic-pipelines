@@ -19,8 +19,8 @@ data class KafkaConfig(
 // KAFKA MESSAGE
 //________________________________________________________________________________
 data class KafkaMessage(
-  val key: ByteArray,
-  val value: ByteArray
+  var key: ByteArray,
+  var value: ByteArray
 ) : java.io.Serializable {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

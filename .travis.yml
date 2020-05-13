@@ -10,6 +10,9 @@ services:
 # see https://blog.travis-ci.com/2014-12-17-faster-builds-with-container-based-infrastructure
 sudo: false
 
+install:
+  - true
+
 # cache the build tool's caches
 cache:
   directories:
@@ -25,7 +28,8 @@ before_script:
   - make docker-start
 
 script:
-  - ./gradlew build
+  - make frontend
+  - make package
 
 after_script:
   - make docker-stop

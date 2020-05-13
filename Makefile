@@ -13,6 +13,8 @@ KAFKA_PORT ?= -p 9092:9092
 ZOOKEEPER_PORT ?= -p 2181:2181 -p 2888:2888 -p 3888:3888 -p 8091:8080
 ZOOKEEPER_UI_PORT ?= -p 9090:9090
 
+VERSION = 1.0.0
+
 default:
 	@echo ${NETWORK}
 	@echo ${CURDIR}
@@ -43,6 +45,8 @@ int:
 test:
 	./gradlew test
 
+test-ci:
+	./gradlew test
 
 docker-test:
 	docker run --rm -it --name test-${RND} --network ${NETWORK} \
@@ -79,9 +83,11 @@ docker-stop: kafka-stop zookeeper-stop network-stop
 #________________________________________________________________________________
 network-start:
 	-docker network create -d bridge ${NETWORK}
+	-docker ps
 
 network-stop:
 	-docker network rm ${NETWORK}
+	-docker ps
 
 
 #________________________________________________________________________________
