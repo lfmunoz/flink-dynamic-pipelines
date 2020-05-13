@@ -59,9 +59,9 @@ class FlinkMonitorMessageGenerator(
     override fun run(ctx: SourceFunction.SourceContext<MonitorMessage>) {
         val aMonitorMessageDataGenerator = MonitorMessageDataGenerator(10)
         while(stopCondition()) {
-            Thread.sleep(generationIntervalMillis)
             val aMonitorMessage = aMonitorMessageDataGenerator.random(20)
             ctx.collect(aMonitorMessage)
+            Thread.sleep(generationIntervalMillis)
         }
         log.info("[done generating messages]")
     }

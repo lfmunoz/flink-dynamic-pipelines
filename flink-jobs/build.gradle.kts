@@ -37,6 +37,12 @@ dependencies {
   // MISC
   implementation("org.fissore:slf4j-fluent:0.12.0")
   implementation("com.google.guava:guava:$guavaVersion")
+  implementation("com.google.guava:guava:$guavaVersion")
+  implementation("org.slf4j:slf4j-log4j12:1.7.30")
+//  implementation("org.slf4j:log4j-over-slf4j:1.7.30")
+//  implementation("ch.qos.logback:logback-core:1.2.3")
+//  implementation("ch.qos.logback:logback-classic:1.2.3")
+
   // JSON
   implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
   implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")

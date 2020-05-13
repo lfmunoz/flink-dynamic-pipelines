@@ -1,6 +1,8 @@
 package com.lfmunoz.monitor.kafka
 
+import com.lfmunoz.monitor.BashService
 import com.lfmunoz.monitor.changeLogLevel
+import com.lfmunoz.monitor.generateKafkaMessage
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
@@ -19,13 +21,18 @@ import java.util.concurrent.atomic.AtomicLong
 class KafkaIntTest {
 
   // Dependencies
-  private val testThreadPool = newFixedThreadPoolContext(4, "consumerThread")
+  private val context = newFixedThreadPoolContext(4, "consumerThread")
+  private val scope = CoroutineScope(context)
+
+  private val bash = BashService()
+  private val kafkaAdmin = KafkaAdminBash(bash)
+  private val aKafkaConfig = KafkaConfig()
 
   //________________________________________________________________________________
   // BEFORE ALL / AFTER ALL
   //________________________________________________________________________________
   @BeforeAll
-  fun before() {
+  fun beforeAll() {
     changeLogLevel("org.apache.kafka.clients.producer.ProducerConfig")
     changeLogLevel("org.apache.kafka.clients.consumer.ConsumerConfig")
     changeLogLevel("org.apache.kafka.common.metrics.Metrics")
@@ -37,104 +44,83 @@ class KafkaIntTest {
     changeLogLevel("org.apache.kafka.common.network.Selector")
   }
 
-  @Test
-  @Timeout(3)
-  fun `wwtf simple publish and consume`() {
-    println("A")
-    runBlocking {
-      println("B")
-        launch(testThreadPool) {
-          println("C")
-//        throw RuntimeException("wtf")
-          Thread.sleep(15_000L)
-            println("X")
+  @BeforeEach
+  fun beforeEach() {
 
-      }
-
-      val latch = CountDownLatch(1)
-      assertThat(latch.await(2, TimeUnit.SECONDS)).isTrue()
-//      println("D")
-//      if(!latch.await(2, TimeUnit.SECONDS)) {
-//        println("E")
-//        fail("a failing test");
-//        throw RuntimeException("test failed")
-//      } else {println("F")}
-    }
 
   }
+
+  @Test
+  fun kafkaTopic() {
+    runBlocking {
+      println(kafkaAdmin.listTopics())
+      println(kafkaAdmin.deleteTopic(aKafkaConfig.topic))
+      println(kafkaAdmin.listTopics())
+    }
+  }
+
+
   //________________________________________________________________________________
   // Tests
   //________________________________________________________________________________
   @Test
-  @Timeout(10)
   fun `simple publish and consume`() {
     val totalMessages = 1_0
     val latch = CountDownLatch(totalMessages)
     val atomicId = AtomicLong()
     val isLooping = AtomicBoolean(true)
-    val aKafkaConfig = KafkaConfig()
 
     runBlocking {
-
       // CONSUMER
-      launch(testThreadPool) {
+      scope.launch {
         val flow = KafkaConsumerBare.connect(aKafkaConfig, isLooping )
         flow.take(totalMessages).collect {
           println(it)
           latch.countDown()
-          if(latch.count == 0L) {
-           isLooping.set(false)
-          }
+          if(latch.count == 0L) { isLooping.set(false) }
         }
       }
 
       // PRODUCER
-      launch(testThreadPool) {
+      scope.launch {
         KafkaPublisherBare.connect(aKafkaConfig, flow {
-          repeat(totalMessages) {
-            emit(generateKafkaMessage(atomicId.getAndIncrement()))
-          }
-        })
+          repeat(totalMessages) { emit(generateKafkaMessage(atomicId.getAndIncrement())) }
+        }).collect { println(it) }
       }
-
       assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue()
     }
   }
 
   @Test
-  @Timeout(10)
   fun `multi-thread publish and consume`() {
     val totalMessages = 10_00
     val parallelism = 2
     val latch = CountDownLatch(totalMessages)
     val atomicId = AtomicLong()
-    val aKafkaConfig = KafkaConfig()
     val isLooping = AtomicBoolean(true)
 
     runBlocking {
       val start = System.currentTimeMillis()
 
       // CONSUMER
-        launch(testThreadPool) {
+        scope.launch {
           val flow = KafkaConsumerBare.connect(aKafkaConfig, isLooping)
           flow.take(totalMessages).collect {
             println("[${latch.count}] - $it ")
             latch.countDown()
-            if(latch.count == 0L) {
-              isLooping.set(false)
-            }
+            if(latch.count == 0L) { isLooping.set(false) }
           }
         }
 
       // PRODUCER
       repeat(parallelism) {id ->
-        launch(testThreadPool) {
+        scope.launch {
           KafkaPublisherBare.connect(aKafkaConfig, flow {
             repeat(totalMessages/parallelism) {
               println("[id=${id}, count=${it}] - emit")
               emit(generateKafkaMessage(atomicId.getAndIncrement()))
             }
-          })
+          }).collect {print(it)}
         }
       }
 
@@ -148,17 +134,13 @@ class KafkaIntTest {
   //________________________________________________________________________________
 // Helper methods
 //________________________________________________________________________________
-  private fun generateKafkaMessage(id: Long): KafkaMessage {
-    val key = id.toString().toByteArray()
-    val value = "[$id] - Hello ".toByteArray()
-    return KafkaMessage(key, value)
-  }
+
 
   private fun printResults(total: Int, diffMillis: Long) {
     println("--------------------------------------------------------------------------")
     println("Results: ")
     println("--------------------------------------------------------------------------")
-    println("Published $total in $diffMillis milliseconds  (rate = ${total.toDouble() / diffMillis})")
+    println("Published $total in $diffMillis milliseconds  (rate = ${total.toDouble() / (diffMillis.toDouble() / 1000) } messages/s)")
     println()
   }
 

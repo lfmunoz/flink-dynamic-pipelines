@@ -83,12 +83,21 @@ dependencies {
 
 
 tasks {
+
   withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
   }
-  withType(Test::class.java) {
-    testLogging.showStandardStreams = true
+
+  test {
+    if (project.hasProperty("jenkins")) {
+      systemProperty("bootstrapServer", "kafkaNet:9092")
+    }
+//    testLogging.showStandardStreams = true
     useJUnitPlatform()
+    testLogging {
+      events("passed", "skipped", "failed")
+    }
   }
+
 
 }

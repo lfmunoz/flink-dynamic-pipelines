@@ -7,6 +7,7 @@ import org.apache.kafka.clients.admin.AdminClientConfig
 import org.apache.kafka.clients.admin.Config
 import org.apache.kafka.clients.admin.DescribeConfigsResult
 import org.apache.kafka.common.config.ConfigResource
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.Timeout
@@ -22,8 +23,7 @@ internal class KafkaAdminBareIntTest {
 
   private val bash = BashService()
   private val kafkaAdmin = KafkaAdminBash(bash)
-  private val topicName = "test-collect_mm"
-  private val groupId = "test-collect_mm"
+  private val aKafkaConfig = KafkaConfig()
 
   //________________________________________________________________________________
   // Tests
@@ -40,7 +40,7 @@ internal class KafkaAdminBareIntTest {
   @Test
   fun `describe topic`() {
     runBlocking {
-      val result = kafkaAdmin.describeTopic(topicName)
+      val result = kafkaAdmin.describeTopic(aKafkaConfig.topic)
       println(result)
     }
 
@@ -58,7 +58,7 @@ internal class KafkaAdminBareIntTest {
   @Test
   fun `describe group consumer group`() {
     runBlocking {
-      val result = kafkaAdmin.describeConsumerGroup(groupId)
+      val result = kafkaAdmin.describeConsumerGroup(aKafkaConfig.groupId)
       println(result)
     }
 
@@ -67,16 +67,17 @@ internal class KafkaAdminBareIntTest {
   @Test
   fun `disk usage`() {
     runBlocking {
-      val result = kafkaAdmin.diskUsage(topicName)
+      val result = kafkaAdmin.diskUsage(aKafkaConfig.topic)
       println(result)
     }
   }
 
 
+  @Disabled
   @Test
   fun `last message`() {
     runBlocking {
-      val result = kafkaAdmin.getLastMessage("mapper-topic")
+      val result = kafkaAdmin.getLastMessage(aKafkaConfig.topic)
       println(result)
     }
   }

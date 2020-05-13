@@ -4,7 +4,7 @@ import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import java.util.*
 import kotlin.collections.ArrayList
 
-private class CollectSink() : SinkFunction<ByteArray> {
+class CollectSink() : SinkFunction<ByteArray> {
   override fun invoke(value: ByteArray) {
     values.add(value)
   }
@@ -14,3 +14,4 @@ private class CollectSink() : SinkFunction<ByteArray> {
     val values: MutableList<ByteArray> = Collections.synchronizedList(ArrayList())
   }
 }
+
