@@ -92,7 +92,7 @@ tasks {
     if (project.hasProperty("jenkins")) {
       systemProperty("bootstrapServer", "kafkaNet:9092")
     }
-//    testLogging.showStandardStreams = true
+    testLogging.showStandardStreams = true
     useJUnitPlatform()
     testLogging {
       events("passed", "skipped", "failed")

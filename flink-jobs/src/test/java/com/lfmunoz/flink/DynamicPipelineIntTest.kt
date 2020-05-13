@@ -47,6 +47,7 @@ class DynamicPipelineIntTest {
       "--bootstrapServer", bootstrapServer
     )
     val jobCtx = parseParameters(args)
+    println(jobCtx)
 
     Thread() {
       // PUBLISH MESSAGES TO KAFKA
@@ -63,7 +64,6 @@ class DynamicPipelineIntTest {
       val broadcastMapperStream = jobCtx.env.setParallelism(1)
         .kafkaSource(jobCtx.mapperKafka)
         .map {
-          println(it.value.toString())
           mapper.readValue(it.value, mapToStringOfStringType) as Map<String, String>
         }
         .returns(MapOfStringToString)

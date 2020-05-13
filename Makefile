@@ -8,8 +8,7 @@ DIR = ${CURDIR}
 RND ?= 12345678
 NETWORK ?= flink-bridge-${RND}
 
-KAFKA_IP ?= 192.168.0.101
-KAFKA_PORT ?= -p 9092:9092
+KAFKA_PORT ?= -p 9092:9092 -p 9093:9093
 ZOOKEEPER_PORT ?= -p 2181:2181 -p 2888:2888 -p 3888:3888 -p 8091:8080
 ZOOKEEPER_UI_PORT ?= -p 9090:9090
 
@@ -55,7 +54,7 @@ docker-test:
 	    -e GRADLE_USER_HOME=.gradle \
 	    -v ~/.gradle:/.gradle
 	    -w /project \
-	    openjdk:8 ./gradlew test --tests *UnitTest*d
+	    openjdk:8 ./gradlew test -Pjenkins
 
 #________________________________________________________________________________
 # PRODUCTION
@@ -115,17 +114,22 @@ zoo-ui-start:
 zoo-ui-stop:
 	docker stop zkui
 
+
 #________________________________________________________________________________
 # Kafka (version = 2.12-2.4.0)
 #  Public port 9092 (bootstrapServer)
 # 	    -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafkaNet:29092,PLAINTEXT_HOST://localhost:9092 \
 #________________________________________________________________________________
+TRAVIS_APP_HOST ?= 192.168.0.101
+
 kafka-start:
-	-docker run -d --rm --name kafka-${RND} --network=${NETWORK} ${KAFKA_PORT} --network-alias=kafkaNet \
-	    -e "ADVERTISED_HOST_NAME=${KAFKA_IP}" \
+	-docker run -it --rm --name kafka-${RND} --network=${NETWORK} ${KAFKA_PORT} --network-alias=kafkaNet \
+	    -e "ADVERTISED_HOST_NAME=${TRAVIS_APP_HOST}" \
 	    -e "ZOOKEEPER_CONNECT=zookeeper-${RND}:2181" \
 	    -e KAFKA_DELETE_TOPIC_ENABLE=true \
 	    debezium/kafka:1.0
+
+# 	    -e KAFKA_ADVERTISED_HOST_NAME=kafkaNet \
 
 # kafka-start:
 # 	-docker run -d --rm --name kafka-${RND} --network=${NETWORK} ${KAFKA_PORT} --network-alias=kafkaNet \
