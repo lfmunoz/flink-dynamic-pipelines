@@ -37,6 +37,12 @@ dependencies {
   // MISC
   implementation("org.fissore:slf4j-fluent:0.12.0")
   implementation("com.google.guava:guava:$guavaVersion")
+  implementation("com.google.guava:guava:$guavaVersion")
+  implementation("org.slf4j:slf4j-log4j12:1.7.30")
+//  implementation("org.slf4j:log4j-over-slf4j:1.7.30")
+//  implementation("ch.qos.logback:logback-core:1.2.3")
+//  implementation("ch.qos.logback:logback-classic:1.2.3")
+
   // JSON
   implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
   implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
@@ -71,13 +77,19 @@ dependencies {
 
 tasks {
 
-  // setup the environment, for jenkins
-  if (project.hasProperty("jenkins")) {
-//    systemProperties = [
-//      'jenkins'           : true,
-//    'ampq'              : "amqp://guest:guest@rabbitNet:5672",
-//    'bootstrapServer'   : "kafkaNet:9092",
-//    ]
+  test {
+    if (project.hasProperty("jenkins")) {
+      systemProperty("bootstrapServer", "kafkaNet:9092")
+    }
+    useJUnitPlatform()
+    testLogging {
+      events("passed", "skipped", "failed")
+      exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+      showExceptions = true
+      showCauses = true
+      showStackTraces = true
+      showStandardStreams = false
+    }
   }
 
   withType<Jar> {
@@ -86,21 +98,8 @@ tasks {
     }
   }
 
-//  withType<KotlinCompile> {
-//    kotlinOptions.jvmTarget = "1.8"
-//  }
-
-  withType<Test> {
-    testLogging {
-      events("passed", "skipped", "failed")
-      exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
-      showExceptions = true
-      showCauses = true
-      showStackTraces = true
-      showStandardStreams = false
-      showStandardStreams = true
-    }
-    useJUnitPlatform()
+  withType<KotlinCompile> {
+    kotlinOptions.jvmTarget = "1.8"
   }
 
 }

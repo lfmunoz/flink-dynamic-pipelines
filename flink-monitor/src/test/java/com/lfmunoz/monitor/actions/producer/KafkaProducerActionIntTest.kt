@@ -23,6 +23,10 @@ import kotlin.random.Random
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class KafkaProducerActionIntTest {
 
+  // Dependencies
+  private val context = newFixedThreadPoolContext(4, "tThread")
+  private val scope = CoroutineScope(context)
+
   //________________________________________________________________________________
   // BEFORE ALL / AFTER ALL
   //________________________________________________________________________________
@@ -56,7 +60,7 @@ class KafkaProducerActionIntTest {
   fun `start and stop producer`() {
     val atomic = AtomicInteger(0)
     val action = KafkaProducerAction()
-    val producerJob  = GlobalScope.launch {
+    val producerJob  = scope.launch {
     // START
       val startStatus = action.accept(startPkt()).map {
         atomic.getAndIncrement()
@@ -79,37 +83,6 @@ class KafkaProducerActionIntTest {
       }
     }
   }
-
-
-  /*
-
-  @Test
-  fun `start and stop sampler`() {
-    val atomicCount = AtomicLong(0)
-    val action = KafkaProducerAction()
-    val sampleMessage = KafkaActionDTO(type = KafkaActionType.SAMPLE)
-    val cancelMessage = KafkaActionDTO(type = KafkaActionType.CANCEL)
-    runBlocking {
-      // SAMPLE
-      newSingleThreadContext("sampler").use {
-        launch(it) {
-          action.accept(buildWsPacket(sampleMessage.toJson())).collect {
-            println("[${atomicCount.getAndIncrement()}] - $it")
-          }
-        }
-      }
-      await.timeout(10, TimeUnit.SECONDS).until { atomicCount.get() > 0L }
-
-      // CANCEL
-      val cancelStatus = action.accept(buildWsPacket(cancelMessage.toJson())).map {
-        return@map KafkaActionStatus.fromJson(KafkaActionDTO.fromJson(it).body)
-      }.toList().first()
-      assertThat(cancelStatus.messagesReceived).isGreaterThan(0L)
-
-    }
-  }\
-
-   */
 
 
 }

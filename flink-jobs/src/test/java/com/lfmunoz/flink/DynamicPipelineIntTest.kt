@@ -15,6 +15,8 @@ import com.lfmunoz.flink.kafka.KafkaMessage
 import com.lfmunoz.flink.kafka.kafkaSink
 import com.lfmunoz.flink.kafka.kafkaSource
 import org.assertj.core.api.Assertions.assertThat
+import org.awaitility.kotlin.await
+import org.junit.jupiter.api.BeforeAll
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -45,10 +47,12 @@ class DynamicPipelineIntTest {
       "--bootstrapServer", bootstrapServer
     )
     val jobCtx = parseParameters(args)
+    println(jobCtx)
 
-
+    Thread() {
+      // PUBLISH MESSAGES TO KAFKA
       jobCtx.env.setParallelism(1)
-        .addSource(FlinkMonitorMessageGenerator(10L, 10L))
+        .addSource(FlinkMonitorMessageGenerator(0L, 200L))
         .map {
           val key = mapper.writeValueAsBytes(it.id)
           val value = mapper.writeValueAsBytes(it)
@@ -56,15 +60,16 @@ class DynamicPipelineIntTest {
         }.returns(KafkaMessage::class.java)
         .kafkaSink(jobCtx.inputKafka)
 
+      // READ CONFIG FROM KAFKA
       val broadcastMapperStream = jobCtx.env.setParallelism(1)
         .kafkaSource(jobCtx.mapperKafka)
         .map {
-          println(it.value.toString())
           mapper.readValue(it.value, mapToStringOfStringType) as Map<String, String>
         }
         .returns(MapOfStringToString)
         .broadcast(mapperStateDescriptor)
 
+      // RUN THE MAPPER PIPELINE
       jobCtx.env
         .kafkaSource(jobCtx.inputKafka)
         .map { it.value }.returns(ByteArray::class.java)
@@ -79,8 +84,20 @@ class DynamicPipelineIntTest {
         }
         .returns(KafkaMessage::class.java)
         .kafkaSink(jobCtx.outputKafka)
+
+      // READ RESULT FROM KAFKA
+      jobCtx.env
+        .kafkaSource(jobCtx.inputKafka)
+        .map { it.value }.returns(ByteArray::class.java)
+        .addSink(CollectSink())
+
       jobCtx.env.execute()
 
+    }.start()
+
+    await.timeout(10, TimeUnit.SECONDS).pollInterval(1, TimeUnit.SECONDS).untilAsserted {
+      assertThat(CollectSink.values.size).isGreaterThan(10)
+    }
 
   }
 

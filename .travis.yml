@@ -4,6 +4,9 @@ language: java
 jdk:
   - openjdk8
 
+services:
+  - docker
+
 # see https://blog.travis-ci.com/2014-12-17-faster-builds-with-container-based-infrastructure
 sudo: false
 
@@ -17,10 +20,20 @@ cache:
 before_install:
   - chmod +x gradlew
 
+install:
+  - true
+
+before_script:
+  - make
+  - make docker-start
 
 script:
-  - make
-  - ./gradlew build
+  - make test
+  - make frontend
+  - make package
+
+after_script:
+  - make docker-stop
 
 #deploy:
 #  provider: script

@@ -23,9 +23,10 @@ class KafkaConsumerAction : ActionInterface {
   }
 
   // CONSUMER
-  @get:Synchronized @set:Synchronized
+  @get:Synchronized
+  @set:Synchronized
   private var aKafkaConfig = KafkaConfig(
-    groupId = "groupId-${Random.nextInt(1000,9999)}",
+    groupId = "groupId-${Random.nextInt(1000, 9999)}",
     topic = "output-topic"
   )
   private val isSampling = AtomicBoolean(false)
@@ -47,7 +48,7 @@ class KafkaConsumerAction : ActionInterface {
 
       when (dto.type) {
         KafkaConsumerType.SAMPLE -> {
-          emitAll(sampling(dto).map{ mapper.writeValueAsString(it)})
+          emitAll(sampling(dto).map { mapper.writeValueAsString(it) })
         }
         KafkaConsumerType.CONFIG_READ -> {
           emitAll(configRead(dto).map { it.toJson() })
@@ -66,30 +67,26 @@ class KafkaConsumerAction : ActionInterface {
   // ________________________________________________________________________________
   // COMMANDS
   // ________________________________________________________________________________
-  private suspend fun sampling(dto: KafkaConsumerDTO): Flow<KafkaConsumerDTO> {
-    return flow {
-      val debounce = dto.body.toLong()
-      if (!isSampling.get() && debounce > 50) {
-        emitAll(startSampling(debounce).map { KafkaConsumerDTO(dto.type, it) })
-      } else {
-        Log.info().log("[sampling already active] - debounce={}", debounce)
-        emit(KafkaConsumerDTO(dto.type, "NOK"))
-      }
-    }.flowOn(context)
-  }
+  private suspend fun sampling(dto: KafkaConsumerDTO): Flow<KafkaConsumerDTO> = flow {
+    val debounce = dto.body.toLong()
+    if (!isSampling.get() && debounce > 50) {
+      emitAll(startSampling(debounce).map { KafkaConsumerDTO(dto.type, it) })
+    } else {
+      Log.info().log("[sampling already active] - debounce={}", debounce)
+      emit(KafkaConsumerDTO(dto.type, "NOK"))
+    }
+  }.flowOn(context)
 
-  private fun startSampling(debounce: Long) : Flow<String> {
+  private fun startSampling(debounce: Long) = flow {
     Log.info().log("[KafkaAction sampling] - starting consumer - {}", debounce)
     messagesReceived.set(0L)
     isSampling.set(true)
-    val flow = KafkaConsumerBare.connect(aKafkaConfig, isSampling)
-    return flow.sample(debounce).map {
-      Log.info().log("[luis] - received message")
+    val flow = KafkaConsumerBare.connect(aKafkaConfig, isSampling).sample(debounce).map {
+      Log.debug().log("[kafka message] - {}", it)
       messagesReceived.getAndIncrement()
-      return@map mapper.readValue(it.value, MonitorMessage::class.java)
-    }.map {
-      return@map mapper.writeValueAsString(it)
+      return@map mapper.writeValueAsString(it.value)
     }
+    emitAll(flow)
   }
 
   private suspend fun configRead(dto: KafkaConsumerDTO): Flow<KafkaConsumerDTO> {
@@ -113,7 +110,7 @@ class KafkaConsumerAction : ActionInterface {
   // ________________________________________________________________________________
   // Helper Methods
   // ________________________________________________________________________________
-  private fun returnConfig() : KafkaConsumerConfig{
+  private fun returnConfig(): KafkaConsumerConfig {
     return KafkaConsumerConfig(
       isSampling = isSampling.get(),
       messagesReceived = messagesReceived.get(),
@@ -126,8 +123,8 @@ class KafkaConsumerAction : ActionInterface {
 
 
 data class KafkaConsumerDTO(
-        var type: KafkaConsumerType = KafkaConsumerType.CONFIG_READ,
-        var body: String = ""
+  var type: KafkaConsumerType = KafkaConsumerType.CONFIG_READ,
+  var body: String = ""
 ) {
   companion object {
     fun fromJson(json: String) = mapper.readValue<KafkaConsumerDTO>(json)

@@ -33,6 +33,30 @@ class KafkaAdminBash(
   private val bootstrapServer = "kafkaNet:9092"
   private val commandPrefix =  "docker exec kafka-12345678 bin/"
 
+
+  // TODO
+  // read kafka config  “$KAFKA_HOME/config/”
+  //  server.properties
+
+  // TODO
+  //  create topic with specific settings
+  // bin/kafka-topics.sh --zookeeper localhost:2181 \
+  //                --create \
+  //                --topic text_topic \
+  //                --replication-factor 1 --partitions
+
+
+  suspend fun changeConfig(): List<CmdResult> {
+    val command = "kafka-configs.sh --zookeeper localhost:2181  --alter --entity-type topics  --add-config retention.ms=1000  --entity-name text_topic"
+    val x = "--delete-config retention.ms"
+    return bash.runCmd("${commandPrefix}${command}").toList()
+  }
+
+  suspend fun deleteTopic(topicName: String) : List<CmdResult> {
+    val command = "kafka-topics.sh --zookeeper ${zookeeperUrl} --delete --topic $topicName"
+    return bash.runCmd("${commandPrefix}${command}").toList()
+  }
+
   suspend fun listTopics() : List<CmdResult> {
     val command = "kafka-topics.sh  --zookeeper $zookeeperUrl --list"
     return bash.runCmd("${commandPrefix}${command}").toList()

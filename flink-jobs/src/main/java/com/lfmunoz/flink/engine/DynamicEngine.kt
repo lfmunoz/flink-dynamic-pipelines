@@ -16,13 +16,16 @@ import javax.script.ScriptEngineManager
 // FLINK MAPPER PROCCESS FUNCTION
 //________________________________________________________________________________
 object DynamicMapperProcessFunction: BroadcastProcessFunction<MonitorMessage, Map<String, String>, MapperResult>() {
+
+  private val Log = FluentLoggerFactory.getLogger(DynamicMapperProcessFunction::class.java)
+
   override fun processElement(value: MonitorMessage, ctx: ReadOnlyContext, out: Collector<MapperResult>) {
-    println("[got element] - $value")
+    Log.info().log("[got element] - $value")
     out.collect(DynamicEngine.evaluate(value))
   }
 
   override fun processBroadcastElement(value: Map<String, String>, ctx: Context, out: Collector<MapperResult>) {
-    println("[got config] - $value")
+    Log.info().log("[got config] - $value")
     DynamicEngine.update(value)
   }
 
