@@ -28,7 +28,8 @@ before_script:
   - make docker-start
 
 script:
-  - make test-ci
+  - make unit
+  - make int
   - make frontend
   - make package
 
