@@ -123,13 +123,16 @@ zoo-ui-stop:
 TRAVIS_APP_HOST ?= 192.168.0.101
 
 kafka-start:
-	-docker run -it --rm --name kafka-${RND} --network=${NETWORK} ${KAFKA_PORT} --network-alias=kafkaNet \
-	    -e "ADVERTISED_HOST_NAME=${TRAVIS_APP_HOST}" \
-	    -e "ZOOKEEPER_CONNECT=zookeeper-${RND}:2181" \
+	-docker run -d --rm --name kafka-${RND} --network=${NETWORK} ${KAFKA_PORT} --network-alias=kafkaNet \
+	    -e "LISTENERS=INTERNAL://kafkaNet:9090,EXTERNAL://:9092" \
+	    -e "ADVERTISED_LISTENERS=INTERNAL://kafkaNet:9090,EXTERNAL://localhost:9092" \
+	    -e "KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT" \
+	    -e "KAFKA_INTER_BROKER_LISTENER_NAME=INTERNAL" \
+	    -e "ZOOKEEPER_CONNECT=zooKeeperNet:2181" \
 	    -e KAFKA_DELETE_TOPIC_ENABLE=true \
 	    debezium/kafka:1.0
 
-# 	    -e KAFKA_ADVERTISED_HOST_NAME=kafkaNet \
+# 	    -e "KAFKA_ADVERTISED_HOST_NAME=localhost" \
 
 # kafka-start:
 # 	-docker run -d --rm --name kafka-${RND} --network=${NETWORK} ${KAFKA_PORT} --network-alias=kafkaNet \
