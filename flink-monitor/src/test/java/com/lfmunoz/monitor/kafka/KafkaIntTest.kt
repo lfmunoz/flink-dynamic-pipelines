@@ -44,22 +44,6 @@ class KafkaIntTest {
     changeLogLevel("org.apache.kafka.common.network.Selector")
   }
 
-  @BeforeEach
-  fun beforeEach() {
-
-
-  }
-
-  @Test
-  fun kafkaTopic() {
-    runBlocking {
-      println(kafkaAdmin.listTopics())
-      println(kafkaAdmin.deleteTopic(aKafkaConfig.topic))
-      println(kafkaAdmin.listTopics())
-    }
-  }
-
-
   //________________________________________________________________________________
   // Tests
   //________________________________________________________________________________
@@ -130,12 +114,9 @@ class KafkaIntTest {
     }
   }
 
-
   //________________________________________________________________________________
-// Helper methods
-//________________________________________________________________________________
-
-
+  // Helper methods
+  //________________________________________________________________________________
   private fun printResults(total: Int, diffMillis: Long) {
     println("--------------------------------------------------------------------------")
     println("Results: ")

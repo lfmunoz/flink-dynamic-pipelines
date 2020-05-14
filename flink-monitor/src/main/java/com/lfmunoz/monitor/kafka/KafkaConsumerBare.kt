@@ -75,7 +75,7 @@ class KafkaConsumerBare {
       props.setProperty(ConsumerConfig.GROUP_ID_CONFIG, kafkaConfig.groupId)
       props.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, deserializer)
       props.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, deserializer)
-//      props.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, kafkaConfig.offset)
+      props.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, kafkaConfig.offset)
       return props
     }
 
